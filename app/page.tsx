@@ -1,3 +1,7 @@
 export default function Home() {
-  return <h1>Lush Salon - Site is Live</h1>
+  return (
+    <main className="min-h-screen bg-black text-white flex items-center justify-center">
+      <h1 className="text-4xl font-bold">Lush Salon - Site is Live</h1>
+    </main>
+  )
 }
