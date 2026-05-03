@@ -123,6 +123,27 @@ export default function Home() {
         </div>
       </section>
 
+            {/* Your Work / Lead Capture */}
+      <section className="px-6 py-16 lg:px-8 bg-neutral-900/50">
+        <div className="mx-auto max-w-2xl text-center">
+          <h3 className="text-2xl font-bold">Salon Owner? Get a site like this</h3>
+          <p className="mt-4 text-neutral-400">
+            I build fast, mobile-friendly websites for salons in Secunda & Mpumalanga. 
+            Live in 24 hours. From R500 setup.
+          </p>
+          <div className="mt-6">
+            <Link
+              href="https://wa.me/27725023999"
+              target="_blank"
+              className="rounded-lg bg-rose-600 px-6 py-3 text-sm font-semibold text-white hover:bg-rose-500 transition"
+            >
+              WhatsApp Me for a Quote
+            </Link>
+          </div>
+          <p className="mt-4 text-xs text-neutral-600">Demo template by Lucas</p>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-neutral-800 px-6 py-12 lg:px-8">
         <div className="mx-auto max-w-7xl text-center text-sm text-neutral-500">
