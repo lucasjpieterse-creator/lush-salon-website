@@ -63,7 +63,7 @@ export default function Home() {
           </p>
           <div className="mt-10">
             <Link
-              href="https://wa.me/27XXXXXXXXX"
+              href="https://wa.me/27725023999"
               target="_blank"
               className="rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-500 transition"
             >
