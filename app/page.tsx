@@ -1,13 +1,14 @@
 import Link from 'next/link'
 
-// ===== SALON CONFIG - CHANGE THIS FOR EACH CLIENT =====
+// ===== SALON CONFIG - PULLED FROM VERCEL ENV VARS =====
 const SALON = {
-  name: "Lush Salon", // Change per client
-  tagline: "Premium hair styling in the heart of Secunda",
-  city: "Secunda, Mpumalanga",
-  hours: "Mon-Sat, 9am-6pm",
-  whatsapp: "27725023999", // Replace with client's number
-  demoMode: true, // Set to false when client goes live
+  name: process.env.NEXT_PUBLIC_SALON_NAME || "Demo Salon",
+  tagline: process.env.NEXT_PUBLIC_SALON_TAGLINE || "Premium hair styling",
+  city: process.env.NEXT_PUBLIC_SALON_CITY || "Secunda, Mpumalanga", 
+  hours: process.env.NEXT_PUBLIC_SALON_HOURS || "Mon-Sat, 9am-6pm",
+  whatsapp: process.env.NEXT_PUBLIC_SALON_WHATSAPP || "27000000000",
+  demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
+  yourNumber: process.env.NEXT_PUBLIC_YOUR_NUMBER || "27725023999", // Your lead capture number
 }
 
 const services = [
@@ -132,14 +133,13 @@ export default function Home() {
             Live in 24 hours. From R50 setup.
           </p>
           <div className="mt-6">
-            <Link
-              href="https://wa.me/27725023999"
-              target="_blank"
-              className="rounded-lg bg-rose-600 px-6 py-3 text-sm font-semibold text-white hover:bg-rose-500 transition"
-            >
-              WhatsApp Me for a Quote
-            </Link>
-          </div>
+<Link
+  href={`https://wa.me/${SALON.yourNumber}`}
+  target="_blank"
+  className="rounded-lg bg-rose-600 px-6 py-3 text-sm font-semibold text-white hover:bg-rose-500 transition"
+>
+  WhatsApp Me for a Quote
+</Link>          </div>
           <p className="mt-4 text-xs text-neutral-600">Demo template by Lucas</p>
         </div>
       </section>
