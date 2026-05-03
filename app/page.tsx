@@ -129,7 +129,7 @@ export default function Home() {
           <h3 className="text-2xl font-bold">Salon Owner? Get a site like this</h3>
           <p className="mt-4 text-neutral-400">
             I build fast, mobile-friendly websites for salons in Secunda & Mpumalanga. 
-            Live in 24 hours. From R500 setup.
+            Live in 24 hours. From R50 setup.
           </p>
           <div className="mt-6">
             <Link
