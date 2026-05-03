@@ -6,7 +6,7 @@ const SALON = {
   tagline: "Premium hair styling in the heart of Secunda",
   city: "Secunda, Mpumalanga",
   hours: "Mon-Sat, 9am-6pm",
-  whatsapp: "27821234567", // Replace with client's number
+  whatsapp: "27725023999", // Replace with client's number
   demoMode: true, // Set to false when client goes live
 }
 
