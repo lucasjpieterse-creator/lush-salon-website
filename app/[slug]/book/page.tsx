@@ -1,173 +1,88 @@
 "use client"
-import { useState, useEffect } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { useParams } from 'next/navigation'
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
-export default function BookPage() {
-  const { slug } = useParams() as { slug: string }
-  const searchParams = useSearchParams()
-  const serviceFromUrl = searchParams.get('service')
-
-  const [stylists, setStylists] = useState<any[]>([])
-  const [services, setServices] = useState<any[]>([])
+export default function BookPage(){
+  const { slug } = useParams()
   const [business, setBusiness] = useState<any>(null)
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
-  const [selectedStylist, setSelectedStylist] = useState<any>(null)
-  const [selectedTime, setSelectedTime] = useState("")
-  const [selectedService, setSelectedService] = useState<any>(null)
-  const [customerName, setCustomerName] = useState("")
-  const [bookedTimes, setBookedTimes] = useState<string[]>([])
+  const [services, setServices] = useState<any[]>([])
+  const [selected, setSelected] = useState<string[]>([])
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
 
-  const times = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"]
-
-  useEffect(() => {
-    async function load() {
+  useEffect(()=>{
+    async function load(){
       const { data: biz } = await supabase.from('businesses').select('*').eq('slug', slug).single()
       setBusiness(biz)
-      if(!biz) return
-      const { data: sts } = await supabase.from('stylists').select('*').eq('business_id', biz.id).order('name')
-      const { data: srvs } = await supabase.from('services').select('*').eq('business_id', biz.id).order('price')
-      setStylists(sts||[]); setServices(srvs||[])
-      if(sts?.[0]) setSelectedStylist(sts[0])
-      if(serviceFromUrl && srvs) {
-        const found = srvs.find((s:any) => s.name.toLowerCase() === serviceFromUrl.toLowerCase())
-        if(found) setSelectedService(found)
-      }
+      const { data: servs } = await supabase.from('services').select('*').eq('business_id', biz.id).eq('active', true)
+      setServices(servs||[])
     }
-    if(slug) load()
-  },[slug, serviceFromUrl])
+    load()
+  },[slug])
 
-  useEffect(() => {
-    async function loadBooked() {
-      if(!business ||!selectedStylist) return
-      const { data } = await supabase.from('bookings')
-     .select('start_time')
-     .eq('business_id', business.id)
-     .eq('stylist_id', selectedStylist.id)
-     .gte('start_time', `${date}T00:00:00`)
-     .lte('start_time', `${date}T23:59:59`)
-     .neq('status', 'cancelled')
-      setBookedTimes(data?.map((b:any)=> new Date(b.start_time).toTimeString().slice(0,5))||[])
-    }
-    loadBooked()
-  }, [business, selectedStylist, date])
-
-  const cleanSpecialty = (spec: string) => spec?.replace('(Open at 15:00)','').replace('Open at 15:00','').replace(' - Specialist','').trim() || 'Stylist'
-
-  const handleBooking = async () => {
-    if(!business ||!selectedStylist ||!selectedService ||!selectedTime) return
-
-    const startStr = `${date}T${selectedTime}:00`
-    const startDateTime = new Date(startStr)
-    const endDateTime = new Date(startDateTime.getTime() + (selectedService.duration_minutes || 60)*60000)
-
-    // 1. CHECK IF ALREADY BOOKED TODAY
-    const { data: existingDay } = await supabase.from('bookings')
-     .select('start_time')
-     .eq('business_id', business.id)
-     .eq('stylist_id', selectedStylist.id)
-     .gte('start_time', `${date}T00:00:00`)
-     .lte('start_time', `${date}T23:59:59`)
-     .neq('status', 'cancelled')
-
-    const already = existingDay?.some((b:any)=> new Date(b.start_time).toTimeString().slice(0,5) === selectedTime)
-    if(already) {
-      alert(`❌ ${selectedStylist.name} is already booked at ${selectedTime}. Please pick another time.`)
-      setBookedTimes([...bookedTimes, selectedTime])
-      setSelectedTime("")
-      return
-    }
-
-    // 2. TRY INSERT - DB will also block if duplicate (if you ran the SQL index)
-    const { error } = await supabase.from('bookings').insert({
-      business_id: business.id,
-      stylist_id: selectedStylist.id,
-      service_id: selectedService.id,
-      client_name: customerName || 'Guest',
-      client_phone: '',
-      start_time: startDateTime.toISOString(),
-      end_time: endDateTime.toISOString(),
-      total_price: selectedService.price,
-      status: 'pending'
-    })
-
-    if(error){
-      if(error.message.includes('no_double_booking') || error.code === '23505'){
-        alert(`❌ Slot just taken! ${selectedStylist.name} at ${selectedTime} is now booked.`)
-        setBookedTimes([...bookedTimes, selectedTime])
-        setSelectedTime("")
-        return
-      } else {
-        alert("Booking failed: "+error.message)
-        return
-      }
-    }
-
-    const message = `Hi ${business.name}! 💇‍♀️ *NEW BOOKING*\n\n*Service:* ${selectedService.name} - R${selectedService.price}\n*Stylist:* ${selectedStylist.name}\n*Date:* ${date}\n*Time:* ${selectedTime}\n*Customer:* ${customerName || 'Guest'}\n\nPlease confirm 🙏`
-    window.open(`https://wa.me/${business.whatsapp_number}?text=${encodeURIComponent(message)}`, '_blank')
-    setBookedTimes([...bookedTimes, selectedTime])
-    setSelectedTime("")
+  const toggleService = (id:string) => {
+    setSelected(prev => prev.includes(id)? prev.filter(x=>x!==id) : [...prev, id])
   }
 
-  if(!business) return <div className="p-6 bg-black text-white min-h-screen">Loading {slug}...</div>
+  const totalPrice = services.filter(s=>selected.includes(s.id)).reduce((sum,s)=>sum + Number(s.price), 0)
+  const totalMin = services.filter(s=>selected.includes(s.id)).reduce((sum,s)=>sum + Number(s.duration_min||s.duration_minutes||0), 0)
+  const selectedNames = services.filter(s=>selected.includes(s.id)).map(s=>s.name).join(' + ')
+
+  const handleBook = async () => {
+    if(selected.length===0) return alert('Select at least 1 service')
+    const stylistRes = await supabase.from('stylists').select('id').eq('business_id', business.id).limit(1).single()
+
+    const { data, error } = await supabase.from('bookings').insert({
+      business_id: business.id,
+      service_id: selected[0], // main service
+      stylist_id: stylistRes.data?.id,
+      customer_name: name,
+      customer_phone: phone,
+      total_price: totalPrice,
+      notes: `COMBO: ${selectedNames} (${totalMin} min)`,
+      status: 'pending'
+    }).select().single()
+
+    if(error) alert(error.message)
+    else {
+      const waNumber = (business.whatsapp_number || business.phone || '').replace(/[^0-9]/g,'')
+      const msg = `Hi ${business.name}! New booking: ${selectedNames} - R${totalPrice} - ${name} - ${phone}`
+      window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank')
+      alert(`Booked! ${selectedNames} - R${totalPrice}`)
+    }
+  }
+
+  if(!business) return <div className="p-10 text-white">Loading...</div>
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
-      <div className="bg-yellow-400 text-black text-center py-2 font-black text-xs tracking-widest">🚧 DEMO MODE — Test booking only • by HustleHub</div>
-      <div className="p-6 max-w-3xl mx-auto pb-32">
-        <a href={`/${slug}`} className="text-zinc-500 text-sm">← Back to {business.name}</a>
-        <h1 className="text-3xl font-black mt-3">Book Appointment</h1>
-        <p className="text-zinc-500 text-sm mt-1">{business.location_text}</p>
+    <div className="min-h-screen bg-black text-white p-6 max-w-lg mx-auto">
+      <a href={`/${slug}`} className="text-zinc-500">← Back</a>
+      <h1 className="text-3xl font-black mt-4">{business.name}</h1>
+      <p className="text-zinc-500 text-sm">Select multiple services for combos</p>
 
-        <h2 className="font-bold mt-8 mb-3">1. Service</h2>
-        <div className="grid gap-2">
-          {services.map(s=>(
-            <button key={s.id} onClick={()=>setSelectedService(s)} className={`p-4 rounded-2xl border text-left flex justify-between ${selectedService?.id===s.id?'bg-white text-black border-white':'bg-zinc-900 border-zinc-800'}`}>
-              <span>{s.name}</span><span className="font-black">R{s.price}</span>
-            </button>
-          ))}
+      <div className="mt-6 grid gap-3">
+        {services.map(s=>(
+          <button key={s.id} onClick={()=>toggleService(s.id)} className={`text-left p-4 rounded-2xl border flex justify-between items-center ${selected.includes(s.id)? 'bg-white text-black border-white' : 'bg-zinc-900 border-zinc-800'}`}>
+            <div><p className="font-bold">{s.name}</p><p className="text-xs opacity-60">{s.duration_min} min</p></div>
+            <div className="font-black">R{s.price} {selected.includes(s.id)? '✓' : '+'}</div>
+          </button>
+        ))}
+      </div>
+
+      {selected.length>0 && (
+        <div className="mt-4 bg-zinc-900 rounded-2xl p-4 border border-zinc-800">
+          <p className="font-bold">Combo: {selectedNames}</p>
+          <p className="text-zinc-400 text-sm">{totalMin} min total • R{totalPrice} total</p>
         </div>
+      )}
 
-        <h2 className="font-bold mt-8 mb-3">2. Choose Stylist</h2>
-        <div className="grid gap-3">
-          {stylists.map(st=>(
-            <button key={st.id} onClick={()=>setSelectedStylist(st)} className={`p-4 rounded-2xl border text-left flex gap-3 items-center ${selectedStylist?.id===st.id?'bg-white text-black':'bg-zinc-900 border-zinc-800'}`}>
-              <div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center font-bold">{st.name[0]}</div>
-              <div className="flex-1"><p className="font-bold">{st.name}</p><p className="text-xs opacity-70">{cleanSpecialty(st.specialty)}</p></div>
-              {selectedStylist?.id===st.id && <span>✓</span>}
-            </button>
-          ))}
-        </div>
-
-        <h2 className="font-bold mt-8 mb-3">3. Your Name</h2>
-        <input value={customerName} onChange={e=>setCustomerName(e.target.value)} placeholder="e.g. Lerato" className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4" />
-
-        <h2 className="font-bold mt-8 mb-3">4. Date</h2>
-        <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4" />
-
-        <h2 className="font-bold mt-8 mb-3">5. Available Times for {selectedStylist?.name}</h2>
-        <div className="grid grid-cols-3 gap-2">
-          {times.map(t=>{
-            const isBooked = bookedTimes.includes(t)
-            return (
-              <button key={t} disabled={isBooked} onClick={()=>setSelectedTime(t)} className={`py-3 rounded-xl border font-bold ${isBooked?'bg-zinc-800 text-zinc-600 line-through cursor-not-allowed border-zinc-800': selectedTime===t?'bg-[#25D366] text-black border-[#25D366]':'bg-zinc-900 border-zinc-800'}`}>
-                {isBooked? `${t} ✕ BOOKED` : t}
-              </button>
-            )
-          })}
-        </div>
-
-        {selectedService && selectedStylist && selectedTime && (
-          <div className="mt-8 p-6 bg-white text-black rounded-[2rem] sticky bottom-6">
-            <h3 className="font-black text-xl">Confirm Booking</h3>
-            <p className="mt-2 text-sm">{selectedService.name} with {selectedStylist.name}</p>
-            <p className="text-sm">{date} at {selectedTime} • {customerName || 'Guest'}</p>
-            <p className="font-black text-2xl mt-2">R{selectedService.price}</p>
-            <button onClick={handleBooking} className="w-full mt-4 bg-black text-white py-4 rounded-2xl font-bold">Confirm on WhatsApp →</button>
-          </div>
-        )}
+      <div className="mt-6 space-y-3">
+        <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 px-4"/>
+        <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Your WhatsApp number" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 px-4"/>
+        <button onClick={handleBook} disabled={selected.length===0} className="w-full bg-yellow-400 text-black py-4 rounded-full font-black disabled:opacity-30">Book R{totalPrice} via WhatsApp →</button>
       </div>
     </div>
   )
