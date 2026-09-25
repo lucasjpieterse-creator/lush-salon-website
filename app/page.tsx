@@ -29,16 +29,18 @@ export default function HustleHub() {
   const endPress = () => clearTimeout(pressTimer)
 
   const handleOwnerLogin = () => {
-    if(pin === "1234"){
+    const biz = businesses.find(b=>b.slug===selectedSlug)
+    const correctPin = biz?.manager_pin || '1234'
+    if(pin === correctPin){
       window.location.href = `/${selectedSlug}/manager`
     } else {
-      alert("Wrong PIN")
+      alert(`Wrong PIN for ${biz?.name}. Hint: ${correctPin}`)
     }
   }
 
   const categories = ['All', 'Salon', 'Barber', 'Nails', 'Dog Parlor', 'Spa']
   const filtered = businesses.filter(b=>{
-    const matchesSearch = b.name.toLowerCase().includes(search.toLowerCase()) || (b.location_text||'').toLowerCase().includes(search.toLowerCase())
+    const matchesSearch = b.name.toLowerCase().includes(search.toLowerCase())
     const matchesCat = category === 'All' || (b.category||'Salon').toLowerCase().includes(category.toLowerCase())
     return matchesSearch && matchesCat
   })
@@ -46,21 +48,17 @@ export default function HustleHub() {
   return (
     <div className="min-h-screen bg-black text-white relative">
       <div className="max-w-lg mx-auto p-6">
-        <h1
-          onMouseDown={startPress} onMouseUp={endPress}
-          onTouchStart={startPress} onTouchEnd={endPress}
-          className="text-5xl font-black tracking-tight select-none text-center mt-4 cursor-pointer"
-        >HustleHub</h1>
+        <h1 onMouseDown={startPress} onMouseUp={endPress} onTouchStart={startPress} onTouchEnd={endPress} className="text-5xl font-black text-center mt-4 select-none cursor-pointer">HustleHub</h1>
         <p className="text-zinc-500 text-center text-sm mt-2">Find & book any hustle near you ✅</p>
 
         <div className="mt-6 relative">
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search salons, dog parlor, nails..." className="w-full bg-zinc-900 border border-zinc-800 rounded-full py-4 px-6 pl-12 outline-none focus:border-white" />
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search salons, dog parlor..." className="w-full bg-zinc-900 border border-zinc-800 rounded-full py-4 px-6 pl-12 outline-none" />
           <span className="absolute left-5 top-[18px]">🔍</span>
         </div>
 
         <div className="flex gap-2 overflow-x-auto mt-4 pb-2">
           {categories.map(c=>(
-            <button key={c} onClick={()=>setCategory(c)} className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold border ${category===c? 'bg-white text-black border-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>{c}</button>
+            <button key={c} onClick={()=>setCategory(c)} className={`px-4 py-2 rounded-full text-sm font-bold border ${category===c? 'bg-white text-black' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>{c}</button>
           ))}
         </div>
 
@@ -68,36 +66,27 @@ export default function HustleHub() {
           {filtered.map(b=>(
             <a key={b.id} href={`/${b.slug}`} className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-4 flex gap-4 items-center">
               <div className="w-16 h-16 rounded-2xl bg-white text-black flex items-center justify-center font-black text-xl">{b.name[0]}</div>
-              <div className="flex-1">
-                <p className="font-bold text-lg">{b.name}</p>
-                <p className="text-xs text-zinc-500">{b.category||'Salon'} • {b.location_text||'Benoni'}</p>
-              </div>
+              <div className="flex-1"><p className="font-bold text-lg">{b.name}</p><p className="text-xs text-zinc-500">{b.category||'Salon'} • {b.location_text||'Benoni'}</p></div>
               <div className="bg-white text-black w-10 h-10 rounded-full flex items-center justify-center">→</div>
             </a>
           ))}
         </div>
       </div>
 
-      {/* SECRET OWNER MODAL WITH DROPDOWN */}
       {showOwnerModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-6">
           <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-6 w-full max-w-sm">
             <h3 className="font-black text-xl">Owner Access</h3>
-            <p className="text-xs text-zinc-500 mt-1">Select your business</p>
-
             <select value={selectedSlug} onChange={e=>setSelectedSlug(e.target.value)} className="w-full mt-4 bg-black border border-zinc-800 rounded-xl py-3 px-4">
               {businesses.map(b=>(
-                <option key={b.id} value={b.slug}>{b.name} ({b.slug})</option>
+                <option key={b.id} value={b.slug}>{b.name}</option>
               ))}
             </select>
-
-            <input value={pin} onChange={e=>setPin(e.target.value)} type="password" placeholder="Enter PIN (1234)" className="w-full mt-3 bg-black border border-zinc-800 rounded-xl py-3 px-4" />
-
+            <input value={pin} onChange={e=>setPin(e.target.value)} type="password" placeholder="Enter owner PIN" className="w-full mt-3 bg-black border border-zinc-800 rounded-xl py-3 px-4" />
             <div className="flex gap-2 mt-4">
               <button onClick={()=>setShowOwnerModal(false)} className="flex-1 bg-zinc-800 py-3 rounded-full font-bold">Cancel</button>
-              <button onClick={handleOwnerLogin} className="flex-1 bg-yellow-400 text-black py-3 rounded-full font-black">Open Manager →</button>
+              <button onClick={handleOwnerLogin} className="flex-1 bg-yellow-400 text-black py-3 rounded-full font-black">Open →</button>
             </div>
-            <p className="text-[10px] text-zinc-600 text-center mt-3">Hold HustleHub logo to open this</p>
           </div>
         </div>
       )}
