@@ -13,6 +13,8 @@ export default function BookPage(){
   const [selected, setSelected] = useState<string[]>([])
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [time, setTime] = useState('10:00')
 
   useEffect(()=>{
     supabase.from('businesses').select('*').eq('slug', slug).single().then(({data})=>{
@@ -30,24 +32,33 @@ export default function BookPage(){
     if(!selected.length) return alert('Select a service')
     if(!name ||!phone) return alert('Enter name + WhatsApp')
 
-    // MINIMAL INSERT - only 2 columns that always exist
+    const notesText = `${names} | R${totalPrice} | ${totalMin}min | Secunda | Wants: ${date} ${time}`
+
     const { error } = await supabase.from('bookings').insert({
       business_id: business.id,
-      service_id: selected[0]
+      service_id: selected[0],
+      client_name: name,
+      client_phone: phone,
+      customer_name: name,
+      customer_phone: phone,
+      booking_date: date,
+      booking_time: time,
+      notes: notesText,
+      status: 'pending',
+      total_price: totalPrice
     })
 
-    // Even if booking insert fails, still do WhatsApp
+    if(error){
+      alert('DB Error: ' + error.message + ' - Still opening WhatsApp')
+    }
+
     const waRaw = (business.whatsapp_number || business.phone || '').replace(/[^0-9]/g,'')
     let wa = waRaw.startsWith('0')? '27'+waRaw.slice(1) : waRaw
-    const msg = `🐾 NEW BOOKING - ${business.name} - Secunda\n\nServices: ${names}\nTotal: R${totalPrice} (${totalMin}min)\nClient: ${name}\nPhone: ${phone}\n\nConfirm time?`
-    window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank')
+    const msg = `🐾 *NEW BOOKING - ${business.name} (Secunda, Mpumalanga)*\n\n*Services:* ${names}\n*Total:* R${totalPrice} (${totalMin} min)\n*Client:* ${name}\n*Phone:* ${phone}\n*Requested:* ${date} at ${time}\n\n_Please reply to client to CONFIRM time:_ \n✅ Confirm ${time} on ${date}?\nOr suggest new time.`
 
-    if(error){
-      alert(`WhatsApp opened! (Booking table needs fix: ${error.message})`)
-    } else {
-      alert(`✅ Booked ${names} - R${totalPrice}`)
-      router.push(`/${slug}`)
-    }
+    window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank')
+    alert(`✅ Request sent for ${date} ${time}! Manager will confirm on WhatsApp.`)
+    router.push(`/${slug}`)
   }
 
   if(!business) return <div className="p-10 bg-black text-white">Loading...</div>
@@ -56,7 +67,8 @@ export default function BookPage(){
     <div className="min-h-screen bg-black text-white p-6 max-w-lg mx-auto">
       <a href={`/${slug}`} className="text-zinc-500 text-sm">← Back</a>
       <h1 className="text-3xl font-black mt-4">{business.name}</h1>
-      <p className="text-zinc-500 text-sm">📍 Secunda, Mpumalanga • Multi-select combos</p>
+      <p className="text-zinc-500 text-sm">📍 Secunda, Mpumalanga • Multi-select + Time</p>
+
       <div className="mt-6 grid gap-3">
         {services.map(s=>(
           <button key={s.id} onClick={()=>toggle(s.id)} className={`text-left p-4 rounded-2xl border flex justify-between ${selected.includes(s.id)? 'bg-white text-black':'bg-zinc-900 border-zinc-800'}`}>
@@ -65,11 +77,19 @@ export default function BookPage(){
           </button>
         ))}
       </div>
-      {selected.length>0 && <div className="mt-4 p-4 bg-zinc-900 rounded-2xl"><p className="font-bold">{names}</p><p className="text-sm text-zinc-400">R{totalPrice} • {totalMin} min • Secunda</p></div>}
+
+      {selected.length>0 && <div className="mt-4 p-4 bg-zinc-900 rounded-2xl"><p className="font-bold">{names}</p><p className="text-sm text-zinc-400">R{totalPrice} • {totalMin} min</p></div>}
+
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        <div><p className="text-xs text-zinc-500 mb-1">Date</p><input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 px-4"/></div>
+        <div><p className="text-xs text-zinc-500 mb-1">Time</p><input type="time" value={time} onChange={e=>setTime(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 px-4"/></div>
+      </div>
+
       <div className="mt-6 space-y-3 bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
         <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" className="w-full bg-black border border-zinc-800 rounded-xl py-3 px-4"/>
         <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="071 123 4567" className="w-full bg-black border border-zinc-800 rounded-xl py-3 px-4"/>
-        <button onClick={handleBook} className="w-full bg-yellow-400 text-black py-4 rounded-full font-black">Book R{totalPrice} via WhatsApp →</button>
+        <button onClick={handleBook} className="w-full bg-yellow-400 text-black py-4 rounded-full font-black">Request R{totalPrice} for {date} {time} → WhatsApp</button>
+        <p className="text-[11px] text-zinc-500 text-center">Manager confirms time on WhatsApp</p>
       </div>
     </div>
   )
