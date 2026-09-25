@@ -70,56 +70,61 @@ Please confirm my slot 🙏`
   if(!business) return <div className="p-6 bg-black text-white min-h-screen">Loading {slug}...</div>
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white p-6 max-w-3xl mx-auto pb-32">
-      <a href={`/${slug}`} className="text-zinc-500 text-sm">← Back to {business.name}</a>
-      <h1 className="text-3xl font-black mt-3">Book Appointment</h1>
-      <p className="text-zinc-500 text-sm mt-1">{business.location_text} • Choose stylist, date & time</p>
-
-      <h2 className="font-bold mt-8 mb-3">1. Service</h2>
-      <div className="grid gap-2">
-        {services.map(s=>(
-          <button key={s.id} onClick={()=>setSelectedService(s)} className={`p-4 rounded-2xl border text-left flex justify-between ${selectedService?.id===s.id?'bg-white text-black border-white':'bg-zinc-900 border-zinc-800'}`}>
-            <span>{s.name} <span className="text-xs opacity-60">({s.duration_minutes}min)</span></span><span className="font-black">R{s.price}</span>
-          </button>
-        ))}
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="bg-yellow-400 text-black text-center py-2 font-black text-xs tracking-widest">
+        🚧 DEMO MODE — Test booking only • by HustleHub
       </div>
+      <div className="p-6 max-w-3xl mx-auto pb-32">
+        <a href={`/${slug}`} className="text-zinc-500 text-sm">← Back to {business.name}</a>
+        <h1 className="text-3xl font-black mt-3">Book Appointment</h1>
+        <p className="text-zinc-500 text-sm mt-1">{business.location_text} • Choose stylist, date & time</p>
 
-      <h2 className="font-bold mt-8 mb-3">2. Choose Stylist ({stylists.length})</h2>
-      <div className="grid grid-cols-1 gap-3">
-        {stylists.map(st=>(
-          <button key={st.id} onClick={()=>setSelectedStylist(st)} className={`p-4 rounded-2xl border text-left flex gap-3 items-center ${selectedStylist?.id===st.id?'bg-white text-black':'bg-zinc-900 border-zinc-800'}`}>
-            <div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-lg">{st.name[0]}</div>
-            <div className="flex-1">
-              <p className="font-bold">{st.name}</p>
-              <p className="text-xs opacity-70">{cleanSpecialty(st.specialty)}</p>
-            </div>
-            {selectedStylist?.id===st.id && <span>✓</span>}
-          </button>
-        ))}
-      </div>
-
-      <h2 className="font-bold mt-8 mb-3">3. Your Name</h2>
-      <input value={customerName} onChange={e=>setCustomerName(e.target.value)} placeholder="e.g. Lerato" className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4" />
-
-      <h2 className="font-bold mt-8 mb-3">4. Date</h2>
-      <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4" />
-
-      <h2 className="font-bold mt-8 mb-3">5. Available Times</h2>
-      <div className="grid grid-cols-3 gap-2">
-        {times.map(t=>(
-          <button key={t} onClick={()=>setSelectedTime(t)} className={`py-3 rounded-xl border font-bold ${selectedTime===t?'bg-[#25D366] text-black border-[#25D366]':'bg-zinc-900 border-zinc-800'}`}>{t}</button>
-        ))}
-      </div>
-
-      {selectedService && selectedStylist && selectedTime && (
-        <div className="mt-8 p-6 bg-white text-black rounded-[2rem] sticky bottom-6 shadow-2xl">
-          <h3 className="font-black text-xl">Confirm Booking</h3>
-          <p className="mt-2 text-sm">{selectedService.name} with {selectedStylist.name}</p>
-          <p className="text-sm">{date} at {selectedTime} • {customerName || 'Guest'}</p>
-          <p className="font-black text-2xl mt-2">R{selectedService.price} • Pay on arrival</p>
-          <button onClick={handleBooking} className="w-full mt-4 bg-black text-white py-4 rounded-2xl font-bold text-center">Confirm on WhatsApp →</button>
+        <h2 className="font-bold mt-8 mb-3">1. Service</h2>
+        <div className="grid gap-2">
+          {services.map(s=>(
+            <button key={s.id} onClick={()=>setSelectedService(s)} className={`p-4 rounded-2xl border text-left flex justify-between ${selectedService?.id===s.id?'bg-white text-black border-white':'bg-zinc-900 border-zinc-800'}`}>
+              <span>{s.name} <span className="text-xs opacity-60">({s.duration_minutes}min)</span></span><span className="font-black">R{s.price}</span>
+            </button>
+          ))}
         </div>
-      )}
+
+        <h2 className="font-bold mt-8 mb-3">2. Choose Stylist ({stylists.length})</h2>
+        <div className="grid grid-cols-1 gap-3">
+          {stylists.map(st=>(
+            <button key={st.id} onClick={()=>setSelectedStylist(st)} className={`p-4 rounded-2xl border text-left flex gap-3 items-center ${selectedStylist?.id===st.id?'bg-white text-black':'bg-zinc-900 border-zinc-800'}`}>
+              <div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-lg">{st.name[0]}</div>
+              <div className="flex-1">
+                <p className="font-bold">{st.name}</p>
+                <p className="text-xs opacity-70">{cleanSpecialty(st.specialty)}</p>
+              </div>
+              {selectedStylist?.id===st.id && <span>✓</span>}
+            </button>
+          ))}
+        </div>
+
+        <h2 className="font-bold mt-8 mb-3">3. Your Name</h2>
+        <input value={customerName} onChange={e=>setCustomerName(e.target.value)} placeholder="e.g. Lerato" className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4" />
+
+        <h2 className="font-bold mt-8 mb-3">4. Date</h2>
+        <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4" />
+
+        <h2 className="font-bold mt-8 mb-3">5. Available Times</h2>
+        <div className="grid grid-cols-3 gap-2">
+          {times.map(t=>(
+            <button key={t} onClick={()=>setSelectedTime(t)} className={`py-3 rounded-xl border font-bold ${selectedTime===t?'bg-[#25D366] text-black border-[#25D366]':'bg-zinc-900 border-zinc-800'}`}>{t}</button>
+          ))}
+        </div>
+
+        {selectedService && selectedStylist && selectedTime && (
+          <div className="mt-8 p-6 bg-white text-black rounded-[2rem] sticky bottom-6 shadow-2xl">
+            <h3 className="font-black text-xl">Confirm Booking</h3>
+            <p className="mt-2 text-sm">{selectedService.name} with {selectedStylist.name}</p>
+            <p className="text-sm">{date} at {selectedTime} • {customerName || 'Guest'}</p>
+            <p className="font-black text-2xl mt-2">R{selectedService.price} • Pay on arrival</p>
+            <button onClick={handleBooking} className="w-full mt-4 bg-black text-white py-4 rounded-2xl font-bold text-center">Confirm on WhatsApp →</button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

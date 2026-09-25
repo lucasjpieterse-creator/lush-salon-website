@@ -19,7 +19,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+  <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="bg-yellow-400 text-black text-center py-2 font-black text-xs tracking-widest sticky top-0 z-50">
+      🚧 DEMO SITE — by HustleHub for portfolio • Not the real Glamour Locks • Bookings are tests
+    </div>
       {/* HERO */}
       <div className="relative h-[55vh] w-full">
         <img 
