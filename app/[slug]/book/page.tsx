@@ -18,6 +18,8 @@ export default function BookPage() {
   const [selectedTime, setSelectedTime] = useState("")
   const [selectedService, setSelectedService] = useState<any>(null)
   const [customerName, setCustomerName] = useState("")
+  const [bookedTimes, setBookedTimes] = useState<string[]>([])
+  const [loadingTimes, setLoadingTimes] = useState(false)
 
   const times = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"]
 
@@ -38,12 +40,33 @@ export default function BookPage() {
     if(slug) load()
   },[slug, serviceFromUrl])
 
+  // Load booked times whenever date or stylist changes
+  useEffect(() => {
+    async function loadBooked() {
+      if(!business ||!selectedStylist) return
+      setLoadingTimes(true)
+      const { data } = await supabase.from('bookings')
+       .select('booking_time')
+       .eq('business_id', business.id)
+       .eq('booking_date', date)
+       .eq('stylist_id', selectedStylist.id)
+       .neq('status', 'cancelled')
+      setBookedTimes(data?.map((b:any)=>b.booking_time.slice(0,5))||[])
+      setLoadingTimes(false)
+    }
+    loadBooked()
+  }, [business, selectedStylist, date])
+
   const cleanSpecialty = (spec: string) => {
     return spec?.replace('(Open at 15:00)','').replace('Open at 15:00','').replace(' - Specialist','').trim() || 'Stylist'
   }
 
   const handleBooking = async () => {
     if(!business ||!selectedStylist ||!selectedService ||!selectedTime) return
+    if(bookedTimes.includes(selectedTime)) {
+      alert(`Sorry, ${selectedStylist.name} is already booked at ${selectedTime} on ${date}. Choose another time.`)
+      return
+    }
     await supabase.from('bookings').insert({
       business_id: business.id,
       stylist_id: selectedStylist.id,
@@ -65,6 +88,8 @@ Please confirm my slot 🙏`
 
     const waUrl = `https://wa.me/${business.whatsapp_number}?text=${encodeURIComponent(message)}`
     window.open(waUrl, '_blank')
+    setBookedTimes([...bookedTimes, selectedTime])
+    setSelectedTime("")
   }
 
   if(!business) return <div className="p-6 bg-black text-white min-h-screen">Loading {slug}...</div>
@@ -108,12 +133,25 @@ Please confirm my slot 🙏`
         <h2 className="font-bold mt-8 mb-3">4. Date</h2>
         <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4" />
 
-        <h2 className="font-bold mt-8 mb-3">5. Available Times</h2>
+        <h2 className="font-bold mt-8 mb-3">5. Available Times {loadingTimes? '(checking...)' : selectedStylist? `for ${selectedStylist.name}` : ''}</h2>
         <div className="grid grid-cols-3 gap-2">
-          {times.map(t=>(
-            <button key={t} onClick={()=>setSelectedTime(t)} className={`py-3 rounded-xl border font-bold ${selectedTime===t?'bg-[#25D366] text-black border-[#25D366]':'bg-zinc-900 border-zinc-800'}`}>{t}</button>
-          ))}
+          {times.map(t=>{
+            const isBooked = bookedTimes.includes(t)
+            return (
+              <button
+                key={t}
+                disabled={isBooked}
+                onClick={()=>setSelectedTime(t)}
+                className={`py-3 rounded-xl border font-bold transition
+                  ${isBooked? 'bg-zinc-800 border-zinc-800 text-zinc-600 line-through cursor-not-allowed'
+                  : selectedTime===t? 'bg-[#25D366] text-black border-[#25D366]'
+                  : 'bg-zinc-900 border-zinc-800'}`}>
+                {isBooked? `${t} ✕` : t}
+              </button>
+            )
+          })}
         </div>
+        {bookedTimes.length>0 && <p className="text-xs text-zinc-500 mt-2">{bookedTimes.length} slots already booked for {selectedStylist?.name} on {date}</p>}
 
         {selectedService && selectedStylist && selectedTime && (
           <div className="mt-8 p-6 bg-white text-black rounded-[2rem] sticky bottom-6 shadow-2xl">
