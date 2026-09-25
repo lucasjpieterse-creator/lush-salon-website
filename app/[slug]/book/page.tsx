@@ -19,7 +19,6 @@ export default function BookPage() {
   const [selectedService, setSelectedService] = useState<any>(null)
   const [customerName, setCustomerName] = useState("")
   const [bookedTimes, setBookedTimes] = useState<string[]>([])
-  const [loadingTimes, setLoadingTimes] = useState(false)
 
   const times = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"]
 
@@ -40,89 +39,96 @@ export default function BookPage() {
     if(slug) load()
   },[slug, serviceFromUrl])
 
-  // Load booked times whenever date or stylist changes
   useEffect(() => {
     async function loadBooked() {
       if(!business ||!selectedStylist) return
-      setLoadingTimes(true)
+      const dayStart = `${date}T00:00:00`
+      const dayEnd = `${date}T23:59:59`
       const { data } = await supabase.from('bookings')
-       .select('booking_time')
-       .eq('business_id', business.id)
-       .eq('booking_date', date)
-       .eq('stylist_id', selectedStylist.id)
-       .neq('status', 'cancelled')
-      setBookedTimes(data?.map((b:any)=>b.booking_time.slice(0,5))||[])
-      setLoadingTimes(false)
+      .select('start_time')
+      .eq('business_id', business.id)
+      .eq('stylist_id', selectedStylist.id)
+      .gte('start_time', dayStart)
+      .lte('start_time', dayEnd)
+      .neq('status', 'cancelled')
+      setBookedTimes(data?.map((b:any)=> new Date(b.start_time).toTimeString().slice(0,5))||[])
     }
     loadBooked()
   }, [business, selectedStylist, date])
 
-  const cleanSpecialty = (spec: string) => {
-    return spec?.replace('(Open at 15:00)','').replace('Open at 15:00','').replace(' - Specialist','').trim() || 'Stylist'
-  }
+  const cleanSpecialty = (spec: string) => spec?.replace('(Open at 15:00)','').replace('Open at 15:00','').replace(' - Specialist','').trim() || 'Stylist'
 
   const handleBooking = async () => {
     if(!business ||!selectedStylist ||!selectedService ||!selectedTime) return
-    if(bookedTimes.includes(selectedTime)) {
-      alert(`Sorry, ${selectedStylist.name} is already booked at ${selectedTime} on ${date}. Choose another time.`)
+
+    const startDateTime = new Date(`${date}T${selectedTime}:00`)
+    const endDateTime = new Date(startDateTime.getTime() + (selectedService.duration_minutes || 60)*60000)
+
+    // SAFETY CHECK - block double booking
+    const { data: exists } = await supabase.from('bookings')
+    .select('id')
+    .eq('business_id', business.id)
+    .eq('stylist_id', selectedStylist.id)
+    .eq('start_time', startDateTime.toISOString())
+    .neq('status', 'cancelled')
+
+    if(exists && exists.length>0) {
+      alert(`❌ ${selectedStylist.name} already booked at ${selectedTime} on ${date}`)
+      setBookedTimes([...bookedTimes, selectedTime])
+      setSelectedTime("")
       return
     }
+
     await supabase.from('bookings').insert({
       business_id: business.id,
       stylist_id: selectedStylist.id,
-      service_name: selectedService.name,
-      booking_date: date,
-      booking_time: selectedTime,
+      service_id: selectedService.id,
+      client_name: customerName || 'Guest',
+      start_time: startDateTime.toISOString(),
+      end_time: endDateTime.toISOString(),
+      total_price: selectedService.price,
       status: 'pending'
     })
 
-    const message = `Hi ${business.name}! 💇‍♀️ *NEW BOOKING* - via HustleHub
+    const message = `Hi ${business.name}! 💇‍♀️ *NEW BOOKING*
 
 *Service:* ${selectedService.name} - R${selectedService.price}
-*Stylist:* ${selectedStylist.name} - ${cleanSpecialty(selectedStylist.specialty)}
+*Stylist:* ${selectedStylist.name}
 *Date:* ${date}
 *Time:* ${selectedTime}
 *Customer:* ${customerName || 'Guest'}
 
-Please confirm my slot 🙏`
+Please confirm 🙏`
 
-    const waUrl = `https://wa.me/${business.whatsapp_number}?text=${encodeURIComponent(message)}`
-    window.open(waUrl, '_blank')
+    window.open(`https://wa.me/${business.whatsapp_number}?text=${encodeURIComponent(message)}`, '_blank')
     setBookedTimes([...bookedTimes, selectedTime])
     setSelectedTime("")
   }
 
-  if(!business) return <div className="p-6 bg-black text-white min-h-screen">Loading {slug}...</div>
+  if(!business) return <div className="p-6 bg-black text-white min-h-screen">Loading...</div>
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      <div className="bg-yellow-400 text-black text-center py-2 font-black text-xs tracking-widest">
-        🚧 DEMO MODE — Test booking only • by HustleHub
-      </div>
+      <div className="bg-yellow-400 text-black text-center py-2 font-black text-xs">🚧 DEMO MODE</div>
       <div className="p-6 max-w-3xl mx-auto pb-32">
-        <a href={`/${slug}`} className="text-zinc-500 text-sm">← Back to {business.name}</a>
+        <a href={`/${slug}`} className="text-zinc-500 text-sm">← Back</a>
         <h1 className="text-3xl font-black mt-3">Book Appointment</h1>
-        <p className="text-zinc-500 text-sm mt-1">{business.location_text} • Choose stylist, date & time</p>
 
         <h2 className="font-bold mt-8 mb-3">1. Service</h2>
         <div className="grid gap-2">
           {services.map(s=>(
-            <button key={s.id} onClick={()=>setSelectedService(s)} className={`p-4 rounded-2xl border text-left flex justify-between ${selectedService?.id===s.id?'bg-white text-black border-white':'bg-zinc-900 border-zinc-800'}`}>
-              <span>{s.name} <span className="text-xs opacity-60">({s.duration_minutes}min)</span></span><span className="font-black">R{s.price}</span>
+            <button key={s.id} onClick={()=>setSelectedService(s)} className={`p-4 rounded-2xl border flex justify-between ${selectedService?.id===s.id?'bg-white text-black':'bg-zinc-900 border-zinc-800'}`}>
+              <span>{s.name}</span><span className="font-black">R{s.price}</span>
             </button>
           ))}
         </div>
 
-        <h2 className="font-bold mt-8 mb-3">2. Choose Stylist ({stylists.length})</h2>
-        <div className="grid grid-cols-1 gap-3">
+        <h2 className="font-bold mt-8 mb-3">2. Stylist</h2>
+        <div className="grid gap-3">
           {stylists.map(st=>(
-            <button key={st.id} onClick={()=>setSelectedStylist(st)} className={`p-4 rounded-2xl border text-left flex gap-3 items-center ${selectedStylist?.id===st.id?'bg-white text-black':'bg-zinc-900 border-zinc-800'}`}>
-              <div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-lg">{st.name[0]}</div>
-              <div className="flex-1">
-                <p className="font-bold">{st.name}</p>
-                <p className="text-xs opacity-70">{cleanSpecialty(st.specialty)}</p>
-              </div>
-              {selectedStylist?.id===st.id && <span>✓</span>}
+            <button key={st.id} onClick={()=>setSelectedStylist(st)} className={`p-4 rounded-2xl border flex gap-3 items-center ${selectedStylist?.id===st.id?'bg-white text-black':'bg-zinc-900 border-zinc-800'}`}>
+              <div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center font-bold">{st.name[0]}</div>
+              <div className="flex-1"><p className="font-bold">{st.name}</p><p className="text-xs opacity-70">{cleanSpecialty(st.specialty)}</p></div>
             </button>
           ))}
         </div>
@@ -133,33 +139,24 @@ Please confirm my slot 🙏`
         <h2 className="font-bold mt-8 mb-3">4. Date</h2>
         <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4" />
 
-        <h2 className="font-bold mt-8 mb-3">5. Available Times {loadingTimes? '(checking...)' : selectedStylist? `for ${selectedStylist.name}` : ''}</h2>
+        <h2 className="font-bold mt-8 mb-3">5. Times for {selectedStylist?.name}</h2>
         <div className="grid grid-cols-3 gap-2">
           {times.map(t=>{
             const isBooked = bookedTimes.includes(t)
             return (
-              <button
-                key={t}
-                disabled={isBooked}
-                onClick={()=>setSelectedTime(t)}
-                className={`py-3 rounded-xl border font-bold transition
-                  ${isBooked? 'bg-zinc-800 border-zinc-800 text-zinc-600 line-through cursor-not-allowed'
-                  : selectedTime===t? 'bg-[#25D366] text-black border-[#25D366]'
-                  : 'bg-zinc-900 border-zinc-800'}`}>
+              <button key={t} disabled={isBooked} onClick={()=>setSelectedTime(t)} className={`py-3 rounded-xl border font-bold ${isBooked?'bg-zinc-800 text-zinc-600 line-through border-zinc-800': selectedTime===t?'bg-[#25D366] text-black':'bg-zinc-900 border-zinc-800'}`}>
                 {isBooked? `${t} ✕` : t}
               </button>
             )
           })}
         </div>
-        {bookedTimes.length>0 && <p className="text-xs text-zinc-500 mt-2">{bookedTimes.length} slots already booked for {selectedStylist?.name} on {date}</p>}
 
         {selectedService && selectedStylist && selectedTime && (
-          <div className="mt-8 p-6 bg-white text-black rounded-[2rem] sticky bottom-6 shadow-2xl">
-            <h3 className="font-black text-xl">Confirm Booking</h3>
-            <p className="mt-2 text-sm">{selectedService.name} with {selectedStylist.name}</p>
-            <p className="text-sm">{date} at {selectedTime} • {customerName || 'Guest'}</p>
-            <p className="font-black text-2xl mt-2">R{selectedService.price} • Pay on arrival</p>
-            <button onClick={handleBooking} className="w-full mt-4 bg-black text-white py-4 rounded-2xl font-bold text-center">Confirm on WhatsApp →</button>
+          <div className="mt-8 p-6 bg-white text-black rounded-[2rem] sticky bottom-6">
+            <p className="font-black text-xl">{selectedService.name} with {selectedStylist.name}</p>
+            <p>{date} at {selectedTime}</p>
+            <p className="font-black text-2xl mt-2">R{selectedService.price}</p>
+            <button onClick={handleBooking} className="w-full mt-4 bg-black text-white py-4 rounded-2xl font-bold">Confirm on WhatsApp →</button>
           </div>
         )}
       </div>
