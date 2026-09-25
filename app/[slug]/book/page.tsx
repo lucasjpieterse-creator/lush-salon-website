@@ -40,37 +40,28 @@ export default function BookPage(){
     if(selected.length===0) return alert('Please select at least 1 service')
     if(!name ||!phone) return alert('Add your name and WhatsApp number')
 
-    // Build notes with everything (so it works even if table is minimal)
-    const notesText = `CLIENT: ${name} | PHONE: ${phone} | COMBO: ${selectedNames} | TOTAL: R${totalPrice} | TIME: ${totalMin}min | LOCATION: Benoni`
+    const notesText = `CLIENT: ${name} | PHONE: ${phone} | COMBO: ${selectedNames} | TOTAL: R${totalPrice} | TIME: ${totalMin}min | LOCATION: Secunda, Mpumalanga`
 
     try {
-      // Try with all common column names - will succeed with at least one combo
-      let bookingData:any = {
+      const bookingData:any = {
         business_id: business.id,
         service_id: selected[0],
         status: 'pending',
         notes: notesText,
       }
 
-      // Try insert minimal first (guaranteed to work)
       const { data, error } = await supabase.from('bookings').insert(bookingData).select().single()
+      if(error) throw error
 
-      if(error){
-        // If minimal also fails, show real error
-        throw error
-      }
-
-      // Success -> WhatsApp
       const waRaw = business.whatsapp_number || business.phone || '27710001111'
       const waNumber = waRaw.toString().replace(/[^0-9]/g,'')
-      // Ensure SA number starts with 27
       let finalWa = waNumber
       if(finalWa.startsWith('0')) finalWa = '27' + finalWa.substring(1)
 
-      const msg = `🐾 *New Booking - ${business.name} (Benoni)*\n\n*Services:* ${selectedNames}\n*Total:* R${totalPrice} - ${totalMin} min\n*Client:* ${name}\n*Phone:* ${phone}\n\nPlease confirm time?`
+      const msg = `🐾 *New Booking - ${business.name} (Secunda)*\n\n*Services:* ${selectedNames}\n*Total:* R${totalPrice} - ${totalMin} min\n*Client:* ${name}\n*Phone:* ${phone}\n*Location:* Secunda, Mpumalanga\n\nPlease confirm time?`
 
       window.open(`https://wa.me/${finalWa}?text=${encodeURIComponent(msg)}`, '_blank')
-      alert(`✅ Booked! ${selectedNames} - R${totalPrice}\nCheck WhatsApp.`)
+      alert(`✅ Booked! ${selectedNames} - R${totalPrice}`)
       router.push(`/${slug}`)
 
     } catch(err:any){
@@ -85,7 +76,7 @@ export default function BookPage(){
     <div className="min-h-screen bg-black text-white p-6 max-w-lg mx-auto">
       <a href={`/${slug}`} className="text-zinc-500 text-sm">← Back to {business.name}</a>
       <h1 className="text-3xl font-black mt-4">{business.name}</h1>
-      <p className="text-zinc-500 text-sm">📍 Benoni, Gauteng • Select multiple for combos</p>
+      <p className="text-zinc-500 text-sm">📍 Secunda, Mpumalanga • Select multiple for combos</p>
 
       <div className="mt-6 grid gap-3">
         {services.map(s=>(
@@ -99,7 +90,7 @@ export default function BookPage(){
       {selected.length>0 && (
         <div className="mt-4 bg-zinc-900 rounded-2xl p-4 border border-zinc-800">
           <p className="font-bold text-white">Your Combo: {selectedNames}</p>
-          <p className="text-zinc-400 text-sm">{totalMin} min total • R{totalPrice} total</p>
+          <p className="text-zinc-400 text-sm">{totalMin} min total • R{totalPrice} total • Secunda</p>
         </div>
       )}
 
@@ -108,7 +99,7 @@ export default function BookPage(){
         <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your full name" className="w-full bg-black border border-zinc-800 rounded-xl py-3 px-4 text-white"/>
         <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Your WhatsApp (e.g. 071 123 4567)" className="w-full bg-black border border-zinc-800 rounded-xl py-3 px-4 text-white"/>
         <button onClick={handleBook} disabled={selected.length===0} className="w-full bg-yellow-400 text-black py-4 rounded-full font-black disabled:opacity-30 mt-2">Book R{totalPrice} • WhatsApp Business →</button>
-        <p className="text-[11px] text-zinc-500 text-center">Booking is stored in manager panel + opens WhatsApp to {business.name}</p>
+        <p className="text-[11px] text-zinc-500 text-center">Secunda, Mpumalanga • Booking stored + WhatsApp to {business.name}</p>
       </div>
     </div>
   )
