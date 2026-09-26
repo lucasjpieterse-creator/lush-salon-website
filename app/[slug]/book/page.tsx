@@ -1,135 +1,146 @@
 "use client"
 import { useEffect, useState } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
-import { useParams, useRouter } from 'next/navigation'
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
+const TIME_SLOTS = ["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00"]
+
 export default function BookPage(){
-  const { slug } = useParams()
-  const router = useRouter()
+  const { slug } = useParams() as { slug: string }
+  const search = useSearchParams()
+  const preService = search.get('service')
+
   const [business, setBusiness] = useState<any>(null)
   const [services, setServices] = useState<any[]>([])
-  const [selected, setSelected] = useState<string[]>([])
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
-  const [time, setTime] = useState('10:00')
-  const [showSuccess, setShowSuccess] = useState(false)
+  const [selectedService, setSelectedService] = useState<any>(null)
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedTime, setSelectedTime] = useState("")
+  const [takenTimes, setTakenTimes] = useState<string[]>([])
+  const [name, setName] = useState("")
+  const [phone, setPhone] = useState("")
+  const [loading, setLoading] = useState(false)
 
   useEffect(()=>{
-    supabase.from('businesses').select('*').eq('slug', slug).single().then(({data})=>{
-      setBusiness(data)
-      if(data) supabase.from('services').select('*').eq('business_id', data.id).eq('active', true).then(r=>setServices(r.data||[]))
-    })
-  },[slug])
+    async function load(){
+      const { data: biz } = await supabase.from('businesses').select('*').eq('slug', slug).single()
+      setBusiness(biz)
+      if(!biz) return
+      const { data: srvs } = await supabase.from('services').select('*').eq('business_id', biz.id).order('price')
+      setServices(srvs||[])
+      if(preService && srvs){
+        setSelectedService(srvs.find((s:any)=> s.name===preService) || srvs[0])
+      } else if(srvs?.[0]){
+        setSelectedService(srvs[0])
+      }
+    }
+    if(slug) load()
+  },[slug, preService])
 
-  const toggle = (id:string) => setSelected(p=>p.includes(id)? p.filter(x=>x!==id): [...p, id])
-  const totalPrice = services.filter(s=>selected.includes(s.id)).reduce((a,s)=>a+Number(s.price||0),0)
-  const totalMin = services.filter(s=>selected.includes(s.id)).reduce((a,s)=>a+Number(s.duration_min||s.duration_minutes||0),0)
-  const names = services.filter(s=>selected.includes(s.id)).map(s=>s.name).join(' + ')
+  // FETCH BLOCKED TIMES WHEN DATE CHANGES
+  useEffect(()=>{
+    async function fetchTaken(){
+      if(!business ||!selectedDate) return
+      const { data } = await supabase.from('bookings')
+       .select('notes')
+       .eq('business_id', business.id)
+       .eq('booking_date', selectedDate)
+       .neq('status','cancelled')
 
-  const handleBook = async () => {
-    if(!selected.length) return alert('Select a service')
-    if(!name ||!phone) return alert('Enter name + WhatsApp')
+      const times = (data||[]).map((b:any)=>{
+        const m = b.notes?.match(/(\d{2}:\d{2})/)
+        return m? m[1] : null
+      }).filter(Boolean) as string[]
+      setTakenTimes(times)
+      if(times.includes(selectedTime)) setSelectedTime("")
+    }
+    fetchTaken()
+  },[selectedDate, business])
 
-    const notesText = `${names} | R${totalPrice} | ${totalMin}min | Secunda | Wants: ${date} ${time}`
+  const handleBooking = async () => {
+    if(!selectedService ||!selectedDate ||!selectedTime ||!name ||!phone) { alert("Fill all fields"); return; }
+    if(takenTimes.includes(selectedTime)) { alert("Sorry, "+selectedTime+" just got booked. Pick another time"); return; }
+
+    setLoading(true)
+    const totalPrice = selectedService.price
 
     const { error } = await supabase.from('bookings').insert({
       business_id: business.id,
-      service_id: selected[0],
       client_name: name,
       client_phone: phone,
       customer_name: name,
       customer_phone: phone,
-      booking_date: date,
-      notes: notesText,
+      booking_date: selectedDate,
       status: 'pending',
-      total_price: totalPrice,
-      price: totalPrice
+      notes: `${selectedService.name} | R${totalPrice} | Wants: ${selectedDate} ${selectedTime}`,
+      total_price: totalPrice
     })
 
-    if(error){ alert('DB Error: ' + error.message); return }
+    if(error){ alert(error.message); setLoading(false); return; }
 
-    setShowSuccess(true)
+    // WhatsApp to manager
+    const bizPhoneRaw = (business.whatsapp_number || '').replace(/[^0-9]/g,'')
+    let bizWa = bizPhoneRaw.startsWith('0')? '27'+bizPhoneRaw.slice(1) : bizPhoneRaw
+    const msg = `🔥 *NEW BOOKING - ${business.name}*\n\n💈 ${selectedService.name} - R${totalPrice}\n📅 ${selectedDate} at ${selectedTime}\n👤 ${name}\n📱 ${phone}\n\nManager: Confirm in /${slug}/manager`
 
-    // 1. WhatsApp to MANAGER (so manager sees at 8am)
-    const waRaw = (business.whatsapp_number || business.phone || '').replace(/[^0-9]/g,'')
-    let waManager = waRaw.startsWith('0')? '27'+waRaw.slice(1) : waRaw
-    const msgManager = `🐾 *NEW BOOKING - ${business.name} (Secunda)*\n\n*Services:* ${names}\n*Total:* R${totalPrice} (${totalMin}min)\n*Client:* ${name}\n*Phone:* ${phone}\n*Requested:* ${date} at ${time}\n\nStatus: PENDING in dashboard. Confirm to client? ✅`
-
-    setTimeout(()=>{
-      window.open(`https://wa.me/${waManager}?text=${encodeURIComponent(msgManager)}`, '_blank')
-    }, 800)
+    window.open(`https://wa.me/${bizWa}?text=${encodeURIComponent(msg)}`, '_blank')
+    alert(`Booked! ${selectedDate} at ${selectedTime}. Owner will confirm in morning via WhatsApp.`)
+    window.location.href = `/${slug}`
   }
 
-  const sendAutoReceiptToClient = () => {
-    // 2. Auto-receipt to CLIENT (feels automated at midnight)
-    const clientRaw = phone.replace(/[^0-9]/g,'')
-    let waClient = clientRaw.startsWith('0')? '27'+clientRaw.slice(1) : clientRaw
-    const icon = business.name.toLowerCase().includes('paw')? '🐾' : business.name.toLowerCase().includes('nail')? '💅' : '✂️'
-    const msgClient = `${icon} Hi ${name}! Thanks for booking at *${business.name}*\n\nWe received: *${names}*\n*R${totalPrice}* - ${date} at ${time}\n\nOur team will confirm your time on WhatsApp in the morning (we open at 8am).\n\n📍 Secunda\nPowered by HustleHub ✅`
-    window.open(`https://wa.me/${waClient}?text=${encodeURIComponent(msgClient)}`, '_blank')
-    router.push(`/${slug}`)
-  }
+  if(!business) return <div className="min-h-screen bg-black text-white p-6">Loading booking...</div>
 
-  if(!business) return <div className="p-10 bg-black text-white">Loading...</div>
-
-  const isPawfect = business.name.toLowerCase().includes('paw') || business.category?.toLowerCase().includes('dog')
-  const isNails = business.category?.toLowerCase().includes('nail') || business.name.toLowerCase().includes('nail')
-  const theme = isPawfect? {
-    bg: 'from-[#FFF3E8] via-[#FFE8D6] to-white text-black', card: 'bg-white border border-orange-100', selected: 'bg-black text-white border-black', muted: 'text-zinc-500', accent: 'bg-black text-white', input: 'bg-white border-orange-200 text-black'
-  } : isNails? {
-    bg: 'from-[#FFE4EC] via-[#FFD1DC] to-white text-black', card: 'bg-white border border-pink-100', selected: 'bg-black text-white border-black', muted: 'text-zinc-500', accent: 'bg-black text-white', input: 'bg-white border-pink-200 text-black'
-  } : {
-    bg: 'from-[#2A1B2E] via-[#1A1A1A] to-black text-white', card: 'bg-zinc-900 border border-zinc-800', selected: 'bg-white text-black border-white', muted: 'text-zinc-400', accent: 'bg-white text-black', input: 'bg-zinc-900 border-zinc-700 text-white'
-  }
+  const isPawfect = business.name.toLowerCase().includes('paw')
+  const isNails = business.name.toLowerCase().includes('nail')
+  const themeBg = isPawfect? 'from-[#FFF3E8] to-white text-black' : isNails? 'from-[#FFE4EC] to-white text-black' : 'from-zinc-900 to-black text-white'
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b ${theme.bg} relative`}>
-      <div className="max-w-lg mx-auto p-6 pb-20">
-        <a href={`/${slug}`} className={`${theme.muted} text-sm font-bold`}>← Back</a>
-        <h1 className="text-2xl font-black tracking-tighter mt-4">{business.name}</h1>
-        <p className={`${theme.muted} text-sm`}>📍 Secunda • 24/7 Booking</p>
+    <div className={`min-h-screen bg-gradient-to-b ${themeBg} p-6`}>
+      <div className="max-w-md mx-auto">
+        <a href={`/${slug}`} className="text-sm opacity-60">← Back to {business.name}</a>
+        <h1 className="text-3xl font-black tracking-tighter mt-4">Book Appointment</h1>
+        <p className="opacity-60 text-sm mt-1">{business.location_text}</p>
 
-        <div className="mt-6 grid gap-3">
+        {/* SERVICE */}
+        <p className="font-bold mt-8 mb-2">1. Choose Service</p>
+        <div className="grid gap-2">
           {services.map(s=>(
-            <button key={s.id} onClick={()=>toggle(s.id)} className={`text-left p-4 rounded-2xl border flex justify-between ${selected.includes(s.id)? theme.selected : theme.card}`}>
-              <div><p className="font-bold">{s.name}</p><p className="text-xs opacity-60">{s.duration_min||30} min</p></div>
-              <div className="font-black">R{s.price} {selected.includes(s.id)? '✓':'+'}</div>
+            <button key={s.id} onClick={()=>setSelectedService(s)} className={`text-left p-4 rounded-2xl border flex justify-between ${selectedService?.id===s.id? 'bg-black text-white border-black' : 'bg-white/80 border-zinc-200 text-black'}`}>
+              <span>{s.name}</span><span className="font-black">R{s.price}</span>
             </button>
           ))}
         </div>
 
-        {selected.length>0 && <div className={`mt-4 p-4 rounded-2xl ${theme.card}`}><p className="font-bold">{names}</p><p className={`text-sm ${theme.muted}`}>R{totalPrice} • {totalMin} min</p></div>}
+        {/* DATE */}
+        <p className="font-bold mt-6 mb-2">2. Choose Date</p>
+        <input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)} min={new Date().toISOString().split('T')[0]} className="w-full bg-white border border-zinc-200 rounded-2xl p-4 text-black" />
 
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <div><p className={`text-xs ${theme.muted} mb-1 font-bold`}>Date</p><input type="date" value={date} onChange={e=>setDate(e.target.value)} className={`w-full border rounded-xl py-3 px-4 ${theme.input}`}/></div>
-          <div><p className={`text-xs ${theme.muted} mb-1 font-bold`}>Time</p><input type="time" value={time} onChange={e=>setTime(e.target.value)} className={`w-full border rounded-xl py-3 px-4 ${theme.input}`}/></div>
+        {/* TIME SLOTS WITH BLOCKING */}
+        <p className="font-bold mt-6 mb-2">3. Choose Time {takenTimes.length>0 && <span className="text-xs font-normal opacity-60">• {takenTimes.length} taken</span>}</p>
+        <div className="grid grid-cols-3 gap-2">
+          {TIME_SLOTS.map(t=>{
+            const isTaken = takenTimes.includes(t)
+            const isSelected = selectedTime===t
+            return (
+              <button key={t} disabled={isTaken} onClick={()=>setSelectedTime(t)} className={`py-3 rounded-full text-sm font-bold border transition ${isTaken? 'bg-zinc-200 text-zinc-400 border-zinc-200 line-through cursor-not-allowed' : isSelected? 'bg-black text-white border-black scale-105' : 'bg-white text-black border-zinc-200'}`}>
+                {t} {isTaken? '✕':''}
+              </button>
+            )
+          })}
         </div>
 
-        <div className={`mt-6 space-y-3 p-4 rounded-[24px] border ${theme.card}`}>
-          <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" className={`w-full border rounded-xl py-3 px-4 ${theme.input}`}/>
-          <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="071 123 4567" className={`w-full border rounded-xl py-3 px-4 ${theme.input}`}/>
-          <button onClick={handleBook} className={`w-full py-4 rounded-full font-black ${theme.accent}`}>Request R{totalPrice} → Book</button>
-        </div>
+        {/* DETAILS */}
+        <p className="font-bold mt-6 mb-2">4. Your Details</p>
+        <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your Name" className="w-full bg-white border border-zinc-200 rounded-2xl p-4 mb-2 text-black" />
+        <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="WhatsApp: 082..." className="w-full bg-white border border-zinc-200 rounded-2xl p-4 text-black" />
+
+        <button onClick={handleBooking} disabled={loading} className="w-full mt-8 bg-yellow-400 text-black py-4 rounded-full font-black text-lg disabled:opacity-50">
+          {loading? 'Booking...' : `Confirm ${selectedDate} at ${selectedTime || '--:--'} →`}
+        </button>
+
+        <p className="text-center text-xs opacity-50 mt-4">24/7 booking • Owner confirms in morning • Secunda</p>
       </div>
-
-      {showSuccess && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur z-50 flex items-center justify-center p-6">
-          <div className="bg-white text-black rounded-[28px] p-7 w-full max-w-sm text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto text-3xl">✅</div>
-            <h2 className="font-black text-2xl mt-4 tracking-tighter">Booking Received!</h2>
-            <p className="text-zinc-500 text-sm mt-2">We saved your booking for <b>{date} at {time}</b>. Our manager in Secunda will confirm in the morning.</p>
-            <div className="mt-4 bg-zinc-100 rounded-2xl p-3 text-left text-sm">
-              <p className="font-bold">{names}</p><p className="text-zinc-500">R{totalPrice} • {name} • {phone}</p>
-            </div>
-            <button onClick={sendAutoReceiptToClient} className="w-full mt-5 bg-black text-white py-4 rounded-full font-black">Send me confirmation on WhatsApp →</button>
-            <button onClick={()=>{setShowSuccess(false); router.push(`/${slug}`)}} className="w-full mt-2 text-zinc-400 text-sm">Close</button>
-            <p className="text-[10px] text-zinc-400 mt-3">Midnight booking enabled — manager notified via WhatsApp</p>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
