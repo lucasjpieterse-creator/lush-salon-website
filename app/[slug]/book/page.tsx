@@ -60,7 +60,7 @@ export default function BookPage(){
       // @ts-ignore
       const handler = window.PaystackPop.setup({
         key: PAYSTACK_KEY,
-        email: phone + "@hustlehub.local",
+        email: "client_" + phone + "@gmail.com",
         amount: deposit * 100,
         currency: "ZAR",
         ref: "HH" + Date.now(),
