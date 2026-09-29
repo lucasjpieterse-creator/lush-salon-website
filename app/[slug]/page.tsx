@@ -1,40 +1,65 @@
 "use client";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { supabase } from "../../lib/supabase";
 import Link from "next/link";
-import { useState } from "react";
-
-const DATA: any = {
-  "glamour-locks": { name: "Glamour Locks", owner: "Thandi", price: 250, service: "Braids & Weave", desc: "Professional braids, weave install, dreadlocks retwist. House calls available in Secunda." },
-  "nails-by-lisa": { name: "Nails by Lisa", owner: "Lisa", price: 180, service: "Acrylic & Gel", desc: "Acrylic, gel, nail art. At home studio in Secunda." },
-  "fade-masters": { name: "Fade Masters", owner: "Sipho", price: 120, service: "Cuts & Fades", desc: "Sharp fades, beard trim, line-ups. Walk-ins welcome." },
-};
 
 export default function BookingPage() {
-  const { slug } = useParams();
-  const b = DATA[slug as string] || { name: slug, owner: "Owner", price: 250, service: "Service", desc: "Business details" };
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [name, setName] = useState("");
+  const { slug } = useParams() as { slug: string };
+  const [business, setBusiness] = useState<any>(null);
+  const [services, setServices] = useState<any[]>([]);
+  const [selected, setSelected] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const book = () => {
-    if(!date ||!time ||!name) return alert("Fill date, time and name");
-    alert(`✅ Booked ${b.name} on ${date} at ${time} for ${name}\n\nNext: This will save to Supabase + send WhatsApp`);
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      let { data: biz } = await supabase.from("businesses").select("*").eq("slug", slug).single();
+      if (!biz) {
+        const alt = slug === "glamour-locks"? "glamourlocks" : slug.replace(/-/g, "");
+        const r = await supabase.from("businesses").select("*").eq("slug", alt).single();
+        biz = r.data;
+      }
+      if (!biz) { setLoading(false); return; }
+      setBusiness(biz);
+      const { data: serv } = await supabase.from("services").select("*").eq("business_id", biz.id);
+      setServices(serv || []);
+      setLoading(false);
+    }
+    load();
+  }, [slug]);
+
+  const bookNow = async () => {
+    if (!selected ||!business) return;
+    const { error } = await supabase.from("bookings").insert({
+      business_id: business.id,
+      service_id: selected.id,
+    });
+    if (!error) {
+      alert(`Booked ${selected.name} at ${business.name}! Check manager page.`);
+      window.location.href = `/${slug}/manager`;
+    } else {
+      alert("Error: " + error.message);
+    }
   };
 
-  return (
-    <div className="min-h-screen bg-black text-white p-6 max-w-xl mx-auto">
-      <Link href="/" className="text-sm text-zinc-400">← Back to HustleHub</Link>
-      <h1 className="text-3xl font-black mt-6">{b.name}</h1>
-      <p className="text-zinc-400 mt-2">{b.owner} • {b.service} • R{b.price}</p>
-      <p className="mt-4 text-sm text-zinc-300 bg-zinc-900 border border-zinc-800 p-4 rounded-xl">{b.desc}</p>
+  if (loading) return <div className="p-10 bg-black min-h-screen text-white">Loading {slug}...</div>;
+  if (!business) return <div className="p-10 bg-black min-h-screen text-white">Business not found: {slug}</div>;
 
-      <div className="mt-8 space-y-4">
-        <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3" />
-        <input value={date} onChange={e=>setDate(e.target.value)} type="date" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3" />
-        <input value={time} onChange={e=>setTime(e.target.value)} type="time" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3" />
-        <button onClick={book} className="w-full bg-white text-black font-bold py-4 rounded-full">Confirm Booking R{b.price}</button>
-        <Link href={`/${slug}/manager`} className="block text-center text-xs text-zinc-500 mt-2">Manager login for {b.owner}</Link>
+  return (
+    <div className="min-h-screen bg-black text-white p-6 max-w-md mx-auto">
+      <Link href="/" className="text-zinc-400 text-sm">← Home</Link>
+      <h1 className="text-3xl font-black mt-4">{business.name}</h1>
+      <p className="text-zinc-400">{business.owner_name}</p>
+      <div className="mt-6 space-y-3">
+        {services.map((s) => (
+          <button key={s.id} onClick={() => setSelected(s)} className={`w-full text-left p-4 rounded-xl border ${selected?.id === s.id? "border-white bg-zinc-900" : "border-zinc-800 bg-zinc-900/50"}`}>
+            <div className="flex justify-between font-bold"><span>{s.name}</span><span>R{s.price}</span></div>
+          </button>
+        ))}
       </div>
+      <button onClick={bookNow} disabled={!selected} className="w-full mt-6 bg-white text-black py-4 rounded-xl font-black disabled:opacity-30">Book Now</button>
+      <Link href={`/${slug}/manager`} className="block text-center mt-4 text-zinc-500 text-sm">Go to Manager →</Link>
     </div>
   );
 }
