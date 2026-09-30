@@ -1,43 +1,36 @@
-export const dynamic = 'force-dynamic';
-
 export async function POST(req) {
   try {
-    const { to, service, price, business } = await req.json();
-    const token = process.env.WHATSAPP_TOKEN;
-    const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+    const body = await req.json();
+    console.log("Incoming send-whatsapp body:", body);
+    const { to, business, service, price } = body;
+    
+    if (!to) return Response.json({ error: "no to number" }, { status: 400 });
+    
+    const cleanTo = to.toString().replace(/\D/g,'').replace(/^0/,'27');
+    console.log("Sending to:", cleanTo);
 
-    if (!token || !phoneId) {
-      return Response.json({ error: 'Missing WHATSAPP_TOKEN or PHONE_ID in Vercel ENV' }, { status: 500 });
-    }
-
-    let cleanTo = to.replace(/\D/g, '');
-    if (cleanTo.startsWith('0')) cleanTo = '27' + cleanTo.substring(1);
-
-    const msg = `✅ HustleHub - Booking Confirmed
-
-Business: ${business}
-Service: ${service}
-Price: R${price}
-
-See you soon in Secunda!
-Reply YES to confirm.`;
-
-    const res = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    const res = await fetch(`https://graph.facebook.com/v20.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
-        messaging_product: 'whatsapp',
+        messaging_product: "whatsapp",
         to: cleanTo,
-        type: 'text',
-        text: { body: msg }
+        type: "template",
+        template: {
+          name: "hello_world",
+          language: { code: "en_US" }
+        }
       })
     });
-
-    const data = await res.json();
-    console.log('WhatsApp result:', data);
-    return Response.json(data);
+    
+    const result = await res.json();
+    console.log("WhatsApp result:", result);
+    return Response.json(result);
   } catch (e) {
     console.error(e);
-    return Response.json({ error: e.message }, { status: 500 });
+    return Response.json({ error: String(e) }, { status: 500 });
   }
 }
