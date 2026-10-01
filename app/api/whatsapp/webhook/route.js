@@ -1,11 +1,9 @@
+export const dynamic = 'force-dynamic';
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
-  const mode = searchParams.get('hub.mode');
-  const token = searchParams.get('hub.verify_token');
-  const challenge = searchParams.get('hub.challenge');
-  const VERIFY = process.env.WHATSAPP_VERIFY_TOKEN || process.env.VERIFY_TOKEN;
-  if (mode === 'subscribe' && token === VERIFY) {
-    return new Response(challenge, { status: 200 });
+  if (searchParams.get('hub.mode') === 'subscribe' && searchParams.get('hub.verify_token') === process.env.VERIFY_TOKEN) {
+    return new Response(searchParams.get('hub.challenge'), { status: 200 });
   }
   return new Response('Forbidden', { status: 403 });
 }
@@ -13,49 +11,50 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const body = await req.json();
-    console.log('Incoming WhatsApp:', JSON.stringify(body, null, 2));
+    console.log('Incoming WhatsApp:', JSON.stringify(body));
 
     const entry = body.entry?.[0];
     const change = entry?.changes?.[0];
-    const value = change?.value;
-    const message = value?.messages?.[0];
+    const message = change?.value?.messages?.[0];
+    const from = message?.from;
+    const text = message?.text?.body?.toLowerCase() || '';
 
-    if (!message) return new Response('OK', { status: 200 });
-
-    const from = message.from;
-    const text = (message.text?.body || '').toLowerCase();
-    const phoneId = value.metadata.phone_number_id;
-
-    let replyText = '';
-    if (text.includes('chicken')) {
-      const m = text.match(/(\d+)/);
-      const num = m? m[1] : '2';
-      replyText = `🐔 Got it! ${num} chickens - R180.\n\n1. Confirm delivery to Secunda?\n2. Pay with Paystack?\n\nReply YES to confirm!`;
-    } else if (text.includes('yes') || text.includes('confirm')) {
-      replyText = `✅ Order confirmed! 2 chickens on the way! Pay here: https://paystack.link...\nOrder #${Math.floor(Math.random()*90000)+10000}`;
-    } else {
-      replyText = `Hi! Welcome to HustleHub Secunda 🐓\n\nTell me: "i want 2 chickens" and I'll take your order!`;
+    if (!from ||!message) {
+      return new Response('OK', { status: 200 });
     }
 
-    const TOKEN = process.env.WHATSAPP_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN;
-    const url = `https://graph.facebook.com/v21.0/${phoneId}/messages`;
+    // Your chicken logic
+    let reply = `Hi! Send "I want X chickens" e.g. "I want 2 chickens"`;
 
-    const res = await fetch(url, {
+    const match = text.match(/(\d+)\s*chicken/);
+    if (match) {
+      const qty = parseInt(match[1]);
+      const price = 120; // R120 each - change to your price
+      reply = `Hi Lucas! Your ${qty} chickens = R${qty * price}. Delivery? Reply YES to confirm.`;
+    } else if (text.includes('yes')) {
+      reply = `Perfect! Order confirmed for ${from}. We will deliver to Secunda. Cash on delivery.`;
+    }
+
+    // SEND REPLY - This is what was missing before
+    const token = process.env.WHATSAPP_TOKEN;
+    const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID || '1464228660115976';
+
+    const res = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + TOKEN,
-        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         messaging_product: 'whatsapp',
         to: from,
         type: 'text',
-        text: { body: replyText }
+        text: { body: reply }
       })
     });
 
     const result = await res.json();
-    console.log('Send result:', JSON.stringify(result));
+    console.log('Send result:', result);
 
     return new Response('OK', { status: 200 });
   } catch (e) {
