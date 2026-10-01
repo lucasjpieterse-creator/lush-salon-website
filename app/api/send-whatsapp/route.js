@@ -1,13 +1,9 @@
 export async function POST(req) {
   try {
-    const body = await req.json();
-    console.log("Incoming send-whatsapp body:", body);
-    const { to, business, service, price } = body;
-    
-    if (!to) return Response.json({ error: "no to number" }, { status: 400 });
-    
-    const cleanTo = to.toString().replace(/\D/g,'').replace(/^0/,'27');
-    console.log("Sending to:", cleanTo);
+    const { to } = await req.json();
+    if (!to) return Response.json({ error: "no number" }, { status: 400 });
+
+    const cleanTo = to.toString().replace(/\D/g, '').replace(/^0/, '27');
 
     const res = await fetch(`https://graph.facebook.com/v20.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
       method: "POST",
@@ -25,7 +21,7 @@ export async function POST(req) {
         }
       })
     });
-    
+
     const result = await res.json();
     console.log("WhatsApp result:", result);
     return Response.json(result);
