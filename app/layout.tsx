@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import SeasonalDecor from "@/components/SeasonalDecor";
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "HustleHub TEKS - Find & Book Local Hustles 24/7",
-  description: "Book barbers, nail techs, car wash on WhatsApp anytime",
+  title: "HustleHub Secunda",
+  description: "Book local. Hustle local.",
 };
 
 export default function RootLayout({
@@ -17,7 +14,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className="bg-black text-white antialiased">
+        {/* Pumpkins only here - once for whole site */}
         <SeasonalDecor />
         {children}
       </body>

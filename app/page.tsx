@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import SeasonalFrame from "@/components/SeasonalFrame";
-import SeasonalDecor from "@/components/SeasonalDecor";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,12 +23,8 @@ export default function Home() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("businesses").select("*").eq("status", "approved").order("name");
+      const { data } = await supabase.from("businesses").select("*");
       if (data) setBusinesses(data);
-      else {
-        const { data: all } = await supabase.from("businesses").select("*");
-        if (all) setBusinesses(all);
-      }
     })();
   }, []);
 
@@ -43,8 +38,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <SeasonalDecor />
-
       <header className="sticky top-0 z-50 border-b border-zinc-800 bg-black/80 backdrop-blur">
         <div className="mx-auto max-w-6xl flex items-center justify-between p-4">
           <h1 className="text-xl font-black">HustleHub <span className="text-zinc-500">Secunda</span></h1>
@@ -64,7 +57,7 @@ export default function Home() {
             <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search braids, nails, pawfect..." className="flex-1 min-w-[220px] bg-zinc-900 border border-zinc-800 rounded-full px-5 py-3 outline-none focus:border-white transition" />
             {specialsCount > 0 && (
               <button onClick={()=>setShowSpecialsOnly(!showSpecialsOnly)} className={`px-5 py-3 rounded-full font-bold text-sm border transition ${showSpecialsOnly? "bg-orange-600 border-orange-500 text-white" : "bg-zinc-900 border-zinc-800 text-zinc-300"}`}>
-                🎃 Halloween Specials ({specialsCount})
+                🎃 Specials ({specialsCount})
               </button>
             )}
           </div>
@@ -72,10 +65,10 @@ export default function Home() {
 
         <div className="grid md:grid-cols-3 gap-4">
           {filtered.map(b => {
-            const m = META[b.slug] || { image: "🏪", color: "from-zinc-700 to-zinc-800", owner: b.owner_name || "Owner", service: b.category, price: b.base_price || b.price_text || 100 };
+            const m = META[b.slug] || { image: "🏪", color: "from-zinc-700 to-zinc-800", owner: b.owner_name || "Owner", service: b.category, price: b.base_price || 120 };
             return (
               <SeasonalFrame key={b.slug} hasSpecial={b.halloween_special} badgeText={b.special_price_text || "HALLOWEEN SPECIAL"}>
-                <Link href={`/${b.slug}`} className="group bg-zinc-900 border border-zinc-800 rounded-[24px] p-5 hover:border-zinc-700 transition block">
+                <Link href={`/${b.slug}`} className="group bg-zinc-900 border border-zinc-800 rounded-[24px] p-5 hover:border-zinc-700 transition block h-full">
                   <div className={`h-20 w-20 rounded-2xl bg-gradient-to-br ${m.color} flex items-center justify-center text-3xl`}>{m.image}</div>
                   <div className="mt-4 flex items-center justify-between">
                     <h3 className="font-bold text-lg">{b.name}</h3>
@@ -92,10 +85,6 @@ export default function Home() {
             )
           })}
         </div>
-
-        {filtered.length === 0 && (
-          <div className="mt-16 text-center text-zinc-500">No hustles found {showSpecialsOnly? "with Halloween specials" : ""}. Try another search.</div>
-        )}
       </main>
     </div>
   );
