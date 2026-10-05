@@ -20,43 +20,48 @@ export default function Home() {
   }
 
   async function trackAndBook(b: any) {
-    // log click
-    await supabase.from("business_clicks").insert({ business_id: b.id, click_type: "whatsapp" });
-    // open whatsapp
+    await supabase.from("business_clicks").insert({ business_id: b.id, click_type: "whatsapp" }).then(()=>{},()=>{});
     const msg = `Hi! I found ${b.name} on HustleHub Secunda. I want to book.`;
-    window.open(`https://wa.me/${b.whatsapp || "27"}?text=${encodeURIComponent(msg)}`, "_blank");
+    window.open(`https://wa.me/${b.whatsapp || ""}?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
   return (
     <div className="min-h-screen bg-black text-white">
       <SeasonalDecor />
-      
+
       <header className="p-4 flex justify-between items-center max-w-6xl mx-auto">
-        <h1 className="text-xl font-black">HUSTLEHUB <span className="text-zinc-500">SECUNDA</span></h1>
-        <Link href="/list" className="bg-white text-black px-4 py-2 rounded-full text-sm font-bold">+ List Your Hustle</Link>
+        <h1 className="text-xl font-black tracking-tight">HUSTLEHUB <span className="text-zinc-500">SECUNDA</span></h1>
+        <div className="flex gap-2">
+          <Link href="/manager" className="bg-zinc-800 text-zinc-300 px-4 py-2.5 rounded-full text-xs font-bold border border-zinc-700">Manager Login</Link>
+          <Link href="/list" className="bg-white text-black px-5 py-2.5 rounded-full text-sm font-bold">+ List Your Hustle</Link>
+        </div>
       </header>
 
       <main className="max-w-6xl mx-auto p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
         {businesses.map(b => (
-          <div key={b.id} className={`p-5 rounded-[24px] border transition-all ${b.halloween_special ? "bg-orange-950/30 border-orange-500 shadow-[0_0_25px_rgba(255,100,0,0.3)]" : "bg-zinc-900 border-zinc-800"}`}>
-            <div className="flex justify-between">
+          <div key={b.id} className={`p-5 rounded-[24px] border transition-all ${b.halloween_special? "bg-orange-950/30 border-orange-500 shadow-[0_0_30px_rgba(255,100,0,0.35)]" : "bg-zinc-900 border-zinc-800"}`}>
+            <div className="flex justify-between items-start">
               <div>
-                <h3 className="font-bold text-lg">{b.name} {b.halloween_special && "🎃"}</h3>
+                <h3 className="font-bold text-[17px]">{b.name} {b.halloween_special && "🎃"}</h3>
                 <p className="text-xs text-zinc-500 mt-1">{b.category} • Open Now</p>
                 {b.halloween_special && b.special_price_text && (
-                  <p className="mt-2 text-sm font-black text-orange-400 bg-orange-600/20 border border-orange-600/30 inline-block px-3 py-1 rounded-full">{b.special_price_text}</p>
+                  <p className="mt-2.5 text-[13px] font-black tracking-wide text-orange-400 bg-orange-600/20 border border-orange-600/30 inline-block px-3 py-1 rounded-full">
+                    {b.special_price_text}
+                  </p>
                 )}
               </div>
-              <p className="font-bold">R{b.base_price || "?"}</p>
+              {b.base_price && <p className="font-bold text-sm">R{b.base_price}</p>}
             </div>
-            <button onClick={() => trackAndBook(b)} className={`mt-4 w-full py-3 rounded-full font-bold text-sm ${b.halloween_special ? "bg-orange-600 text-white" : "bg-white text-black"}`}>
+            <button onClick={() => trackAndBook(b)} className={`mt-4 w-full py-3.5 rounded-full font-bold text-[14px] ${b.halloween_special? "bg-[#ff4d00] text-white" : "bg-white text-black"}`}>
               Book on WhatsApp →
             </button>
           </div>
         ))}
       </main>
 
-      <Link href="/ceo" className="fixed bottom-4 left-4 text-[10px] text-zinc-700">CEO</Link>
+      <div className="fixed bottom-4 left-4 flex gap-2">
+        <Link href="/ceo" className="bg-zinc-900 border border-zinc-800 text-zinc-600 text-[11px] px-3 py-1.5 rounded-full">CEO 👑</Link>
+      </div>
     </div>
   );
 }
