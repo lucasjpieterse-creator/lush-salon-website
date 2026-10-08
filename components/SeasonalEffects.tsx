@@ -7,8 +7,7 @@ export default function SeasonalEffects() {
 
   useEffect(() => {
     const today = new Date();
-    const month = today.getMonth(); // 0 = Jan, 9 = Oct, 11 = Dec
-
+    const month = today.getMonth(); // 9 = October
     if (month === 9) {
       setSeason("halloween");
     } else if (month === 11) {
@@ -22,33 +21,45 @@ export default function SeasonalEffects() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
-      {/* 🎃 HALLOWEEN THEME */}
       {season === "halloween" && (
         <>
-          {/* Top-Left Pumpkin */}
-          <div className="absolute top-4 left-4 text-4xl animate-bounce duration-1000 select-none">
+          {/* Top-Left Glowing Pumpkin */}
+          <div className="absolute top-4 left-4 text-4xl select-none animate-bounce drop-shadow-[0_0_15px_rgba(249,115,22,0.9)]">
             🎃
           </div>
 
-          {/* Top-Right Pumpkin */}
-          <div className="absolute top-4 right-4 text-4xl animate-bounce duration-1000 select-none">
+          {/* Top-Right Glowing Pumpkin */}
+          <div className="absolute top-4 right-4 text-4xl select-none animate-bounce drop-shadow-[0_0_15px_rgba(249,115,22,0.9)]">
             🎃
           </div>
 
-          {/* Bats Flying Across Header */}
-          <div className="absolute top-10 left-0 right-0 flex justify-between px-12 opacity-80 animate-pulse pointer-events-none select-none">
-            <span className="text-2xl transform -rotate-12">🦇</span>
-            <span className="text-3xl transform rotate-6">🦇</span>
-            <span className="text-2xl transform -rotate-45">🦇</span>
+          {/* Bats Flying Across the Screen (Left to Right Loop) */}
+          <div className="absolute top-12 left-0 w-full pointer-events-none overflow-hidden">
+            <div className="flex space-x-12 animate-[fly_12s_linear_infinite] whitespace-nowrap">
+              <span className="text-3xl inline-block -rotate-12">🦇</span>
+              <span className="text-2xl inline-block rotate-6 translate-y-3">🦇</span>
+              <span className="text-4xl inline-block -rotate-45 -translate-y-2">🦇</span>
+            </div>
           </div>
+
+          {/* Tailwind Keyframes for Flying Animation */}
+          <style jsx global>{`
+            @keyframes fly {
+              0% {
+                transform: translateX(-10%);
+              }
+              100% {
+                transform: translateX(110vw);
+              }
+            }
+          `}</style>
         </>
       )}
 
-      {/* 🎄 CHRISTMAS THEME */}
       {season === "christmas" && (
         <>
-          <div className="absolute top-4 left-4 text-4xl select-none">🎄</div>
-          <div className="absolute top-4 right-4 text-4xl select-none">🎁</div>
+          <div className="absolute top-4 left-4 text-4xl select-none drop-shadow-[0_0_12px_rgba(34,197,94,0.8)]">🎄</div>
+          <div className="absolute top-4 right-4 text-4xl select-none drop-shadow-[0_0_12px_rgba(239,68,68,0.8)]">🎁</div>
           <div className="absolute inset-0 text-white/40 text-sm flex justify-around pt-6 select-none">
             <span className="animate-pulse">❄️</span>
             <span className="animate-bounce">❄️</span>
