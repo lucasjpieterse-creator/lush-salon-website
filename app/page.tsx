@@ -31,14 +31,14 @@ export default function HomePage() {
     <main className="min-h-screen bg-black text-white relative">
       <HalloweenFloaties />
 
-      {/* HEADER - RESTORED */}
+      {/* HEADER */}
       <header className="max-w-6xl mx-auto px-6 pt-6 flex justify-between items-center relative z-20">
         <Link href="/" className="font-black text-[16px] tracking-tighter">HUSTLEHUB SECUNDA 🎃</Link>
         <div className="flex gap-2 items-center">
           <Link href="/manager" className="text-[12px] font-bold border border-[#2A2A2A] bg-[#1A1A1A] text-zinc-300 hover:text-white px-4 py-2 rounded-full transition">
             Manager
           </Link>
-          <Link href="/add" className="text-[12px] font-black bg-white text-black hover:bg-zinc-200 px-5 py-2 rounded-full transition">
+          <Link href="/join" className="text-[12px] font-black bg-white text-black hover:bg-zinc-200 px-5 py-2 rounded-full transition">
             + Add Your Hustle
           </Link>
         </div>
@@ -52,7 +52,6 @@ export default function HomePage() {
         </h1>
         <p className="text-zinc-500 text-sm mt-3">Secunda • Evander • Trichardt • Verified businesses only</p>
 
-        {/* SEARCH */}
         <div className="mt-6">
           <input
             value={search}
@@ -62,7 +61,6 @@ export default function HomePage() {
           />
         </div>
 
-        {/* CATEGORIES */}
         <div className="flex gap-2 mt-5 overflow-x-auto pb-2 scrollbar-hide">
           {categories.map((cat) => (
             <button
@@ -92,7 +90,6 @@ export default function HomePage() {
         {!loading && filtered.length === 0 && <p className="text-zinc-500 mt-8 text-sm text-center">No businesses found for "{search || filter}"</p>}
       </div>
 
-      {/* FOOTER */}
       <footer className="mt-16 bg-[#0a0a0a] border-t border-[#1A1A1A] py-8 relative z-10">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-center md:text-left">

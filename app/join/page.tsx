@@ -15,8 +15,7 @@ export default function JoinPage() {
     e.preventDefault();
     setLoading(true);
     const form = new FormData(e.target);
-    
-    // We remove status column so it won't crash if you don't have it
+
     const { error } = await supabase.from("businesses").insert({
       slug: String(form.get("name")).toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       name: form.get("name"),
@@ -59,7 +58,7 @@ export default function JoinPage() {
         <input name="whatsapp" required placeholder="WhatsApp 2782..." className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 outline-none" />
         <input name="price" type="number" required placeholder="Starting Price (120)" className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 outline-none" />
         <button disabled={loading} className="bg-white text-black p-4 rounded-full font-bold mt-2">
-          {loading ? "Sending..." : "Submit →"}
+          {loading? "Sending..." : "Submit →"}
         </button>
       </form>
     </div>
