@@ -3,10 +3,9 @@ import { useEffect, useState } from "react";
 import BusinessCard from "../components/BusinessCard";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const categories = [
   { label: "All", icon: "✨" },
@@ -21,22 +20,30 @@ export default function HomePage() {
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [active, setActive] = useState("All");
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchBiz() {
-      const { data } = await supabase
+      setLoading(true);
+      const { data, error } = await supabase
        .from("businesses")
        .select("*")
-       .eq("is_active", true)
        .order("created_at", { ascending: false });
-      setBusinesses(data || []);
+
+      if (error) {
+        console.error("SUPABASE ERROR:", error);
+      } else {
+        setBusinesses(data || []);
+      }
+      setLoading(false);
     }
     fetchBiz();
   }, []);
 
   const filtered = businesses.filter((b) => {
-    const matchCat = active === "All" || b.category?.toLowerCase().includes(active.toLowerCase());
-    const matchSearch = b.name.toLowerCase().includes(search.toLowerCase());
+    const cat = (b.category || "").toLowerCase();
+    const matchCat = active === "All" || cat.includes(active.toLowerCase());
+    const matchSearch = (b.name || "").toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
 
@@ -45,8 +52,12 @@ export default function HomePage() {
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* HEADER */}
         <div className="mb-6">
-          <h1 className="text-[28px] font-extrabold tracking-tight">Find trusted pros in Secunda ⚡</h1>
-          <p className="text-sm text-gray-500 mt-1">Verified businesses • Instant booking • Deposit protected</p>
+          <h1 className="text-[28px] font-extrabold tracking-tight">
+            Find trusted pros in Secunda <span>⚡</span>
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Verified businesses • Instant booking • Deposit protected
+          </p>
         </div>
 
         {/* SEARCH */}
@@ -60,7 +71,7 @@ export default function HomePage() {
           <span className="absolute right-4 top-3.5 text-gray-400">🔍</span>
         </div>
 
-        {/* 2. CATEGORY SCROLL PILLS */}
+        {/* CATEGORY PILLS */}
         <div className="flex gap-2 overflow-x-auto no-scrollbar py-3 -mx-4 px-4 sticky top-0 bg-[#fafafa]/80 backdrop-blur z-10">
           {categories.map((cat) => (
             <button
@@ -77,15 +88,30 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-          {filtered.map((biz) => (
-            <BusinessCard key={biz.id} business={biz} />
-          ))}
-        </div>
+        {/* LOADING */}
+        {loading && (
+          <p className="text-center text-sm text-gray-500 mt-20">Loading businesses...</p>
+        )}
 
-        {filtered.length === 0 && (
-          <p className="text-center text-sm text-gray-500 mt-20">No businesses found for "{active}"</p>
+        {/* GRID */}
+        {!loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            {filtered.map((biz) => (
+              <BusinessCard key={biz.id} business={biz} />
+            ))}
+          </div>
+        )}
+
+        {!loading && filtered.length === 0 && businesses.length > 0 && (
+          <p className="text-center text-sm text-gray-500 mt-20">
+            No businesses found for "{active}"
+          </p>
+        )}
+
+        {!loading && businesses.length === 0 && (
+          <p className="text-center text-sm text-gray-500 mt-20">
+            No businesses in database. Check Supabase table `businesses`.
+          </p>
         )}
       </div>
     </main>
