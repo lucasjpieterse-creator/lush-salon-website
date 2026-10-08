@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import BusinessCard from "@/components/BusinessCard";
 import HalloweenFloaties from "@/components/HalloweenFloaties";
@@ -29,6 +30,19 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-black text-white relative">
       <HalloweenFloaties />
+
+      {/* HEADER - RESTORED */}
+      <header className="max-w-6xl mx-auto px-6 pt-6 flex justify-between items-center relative z-20">
+        <Link href="/" className="font-black text-[16px] tracking-tighter">HUSTLEHUB SECUNDA 🎃</Link>
+        <div className="flex gap-2 items-center">
+          <Link href="/manager" className="text-[12px] font-bold border border-[#2A2A2A] bg-[#1A1A1A] text-zinc-300 hover:text-white px-4 py-2 rounded-full transition">
+            Manager
+          </Link>
+          <Link href="/add" className="text-[12px] font-black bg-white text-black hover:bg-zinc-200 px-5 py-2 rounded-full transition">
+            + Add Your Hustle
+          </Link>
+        </div>
+      </header>
 
       {/* HERO */}
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-6 relative z-10">
@@ -78,14 +92,13 @@ export default function HomePage() {
         {!loading && filtered.length === 0 && <p className="text-zinc-500 mt-8 text-sm text-center">No businesses found for "{search || filter}"</p>}
       </div>
 
-      {/* FOOTER - Legal Links */}
+      {/* FOOTER */}
       <footer className="mt-16 bg-[#0a0a0a] border-t border-[#1A1A1A] py-8 relative z-10">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-center md:text-left">
             <p className="text-white font-bold text-sm">HustleHub Secunda 🎃</p>
             <p className="text-zinc-500 text-xs mt-1">Secunda • Evander • Trichardt</p>
           </div>
-
           <div className="flex gap-6 text-xs">
             <a href="/terms" className="text-zinc-400 hover:text-white transition underline">Terms & Conditions</a>
             <a href="/privacy" className="text-zinc-400 hover:text-white transition underline">Privacy Policy (POPIA)</a>
@@ -93,7 +106,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="max-w-6xl mx-auto px-6 mt-6 text-center">
-          <p className="text-[10px] text-zinc-600">© 2026 HustleHub Secunda. All bookings processed via WhatsApp Business API. Secured by Supabase.</p>
+          <p className="text-[10px] text-zinc-600">© 2026 HustleHub Secunda. All bookings processed via WhatsApp. Secured by Supabase.</p>
         </div>
       </footer>
     </main>
