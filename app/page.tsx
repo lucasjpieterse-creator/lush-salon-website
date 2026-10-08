@@ -1,58 +1,93 @@
 "use client";
 import { useEffect, useState } from "react";
+import BusinessCard from "@/components/BusinessCard";
 import { createClient } from "@supabase/supabase-js";
-import Link from "next/link";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function Home() {
+const categories = [
+  { label: "All", icon: "✨" },
+  { label: "Salon", icon: "💇" },
+  { label: "Nails", icon: "💅" },
+  { label: "Pet Grooming", icon: "🐶" },
+  { label: "Car Wash", icon: "🚗" },
+  { label: "Massage", icon: "💆" },
+];
+
+export default function HomePage() {
   const [businesses, setBusinesses] = useState<any[]>([]);
+  const [active, setActive] = useState("All");
+  const [search, setSearch] = useState("");
 
-  useEffect(() => { fetchBiz(); }, []);
+  useEffect(() => {
+    async function fetchBiz() {
+      const { data } = await supabase
+       .from("businesses")
+       .select("*")
+       .eq("is_active", true)
+       .order("created_at", { ascending: false });
+      setBusinesses(data || []);
+    }
+    fetchBiz();
+  }, []);
 
-  async function fetchBiz() {
-    const { data } = await supabase.from("businesses").select("*").order("created_at");
-    if (data) setBusinesses(data);
-  }
+  const filtered = businesses.filter((b) => {
+    const matchCat = active === "All" || b.category?.toLowerCase().includes(active.toLowerCase());
+    const matchSearch = b.name.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <header className="p-4 flex justify-between items-center max-w-6xl mx-auto">
-        <h1 className="text-xl font-black tracking-tight">HUSTLEHUB <span className="text-zinc-500">SECUNDA</span></h1>
-        <div className="flex gap-2">
-          <Link href="/manager" className="bg-zinc-800 text-zinc-300 px-4 py-2.5 rounded-full text-xs font-bold border border-zinc-700">Manager Login</Link>
-          <Link href="/join" className="bg-white text-black px-5 py-2.5 rounded-full text-sm font-bold">+ List Your Hustle</Link>
+    <main className="min-h-screen bg-[#fafafa]">
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* HEADER */}
+        <div className="mb-6">
+          <h1 className="text-[28px] font-extrabold tracking-tight">Find trusted pros in Secunda ⚡</h1>
+          <p className="text-sm text-gray-500 mt-1">Verified businesses • Instant booking • Deposit protected</p>
         </div>
-      </header>
 
-      <main className="max-w-6xl mx-auto p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        {businesses.map(b => (
-          <Link key={b.id} href={`/${b.slug}`} className={`p-5 rounded-[24px] border transition-all block ${b.halloween_special? "bg-orange-950/30 border-orange-500 shadow-[0_0_30px_rgba(255,100,0,0.35)]" : "bg-zinc-900 border-zinc-800 hover:border-zinc-600"}`}>
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-bold text-[17px]">{b.name} {b.halloween_special && "🎃"}</h3>
-                <p className="text-xs text-zinc-500 mt-1">{b.category} • Open Now</p>
-                {b.halloween_special && b.special_price_text && (
-                  <p className="mt-2.5 text-[13px] font-black tracking-wide text-orange-400 bg-orange-600/20 border border-orange-600/30 inline-block px-3 py-1 rounded-full">
-                    {b.special_price_text}
-                  </p>
-                )}
-              </div>
-              {b.base_price && <p className="font-bold text-sm">R{b.base_price}</p>}
-            </div>
-            <div className={`mt-4 w-full py-3.5 rounded-full font-bold text-[14px] text-center ${b.halloween_special? "bg-[#ff4d00] text-white" : "bg-white text-black"}`}>
-              View Services →
-            </div>
-          </Link>
-        ))}
-      </main>
+        {/* SEARCH */}
+        <div className="relative mb-3">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search salon, nails, car wash..."
+            className="w-full bg-white border border-gray-200 rounded-full px-5 py-3.5 text-sm focus:outline-none focus:border-black"
+          />
+          <span className="absolute right-4 top-3.5 text-gray-400">🔍</span>
+        </div>
 
-      <div className="fixed bottom-4 left-4 flex gap-2">
-        <Link href="/ceo" className="bg-zinc-900 border border-zinc-800 text-zinc-600 text-[11px] px-3 py-1.5 rounded-full">CEO 👑</Link>
+        {/* 2. CATEGORY SCROLL PILLS */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar py-3 -mx-4 px-4 sticky top-0 bg-[#fafafa]/80 backdrop-blur z-10">
+          {categories.map((cat) => (
+            <button
+              key={cat.label}
+              onClick={() => setActive(cat.label)}
+              className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold border transition-all ${
+                active === cat.label
+                 ? "bg-black text-white border-black shadow-md scale-105"
+                  : "bg-white text-gray-700 border-gray-200 hover:border-black hover:bg-white"
+              }`}
+            >
+              {cat.icon} {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* GRID */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+          {filtered.map((biz) => (
+            <BusinessCard key={biz.id} business={biz} />
+          ))}
+        </div>
+
+        {filtered.length === 0 && (
+          <p className="text-center text-sm text-gray-500 mt-20">No businesses found for "{active}"</p>
+        )}
       </div>
-    </div>
+    </main>
   );
 }
