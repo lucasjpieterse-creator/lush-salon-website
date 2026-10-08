@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import SeasonalEffects from "@/components/SeasonalEffects";
+import Footer from "@/components/Footer"; // Ensure path matches your existing Footer location
 
 export default function SeasonalWrapper({
   children,
@@ -10,14 +11,21 @@ export default function SeasonalWrapper({
 }) {
   const pathname = usePathname();
 
-  // Check if current route is the CEO page or any CEO sub-route
+  // Check if current route is CEO page
   const isCeoPage = pathname?.startsWith("/ceo");
 
   return (
-    <>
-      {children}
-      {/* Show seasonal effects everywhere EXCEPT on /ceo */}
-      {!isCeoPage && <SeasonalEffects />}
-    </>
+    <div className="flex flex-col min-h-screen">
+      {/* Main Page Content */}
+      <main className="flex-grow">{children}</main>
+
+      {/* Show Seasonal Effects and POPIA Footer ONLY when not on /ceo */}
+      {!isCeoPage && (
+        <>
+          <SeasonalEffects />
+          <Footer />
+        </>
+      )}
+    </div>
   );
 }

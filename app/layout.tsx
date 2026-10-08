@@ -3,7 +3,7 @@ import "./globals.css";
 import SeasonalWrapper from "@/components/SeasonalWrapper";
 
 export const metadata: Metadata = {
-  title: "HustleHub",
+  title: "HustleHub Secunda",
   description: "Find & Book Local Hustlers",
 };
 
