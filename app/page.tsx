@@ -1,41 +1,101 @@
 "use client";
 import { useEffect, useState } from "react";
-import BusinessCard from "../components/BusinessCard";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
+import BusinessCard from "@/components/BusinessCard";
+import HalloweenFloaties from "@/components/HalloweenFloaties";
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-const categories = [{ label: "All", icon: "✨" },{ label: "Salon", icon: "💇" },{ label: "Nails", icon: "💅" },{ label: "Pet Grooming", icon: "🐶" },{ label: "Car Wash", icon: "🚗" },{ label: "Massage", icon: "💆" },];
+const categories = ["All", "Nails", "Hair", "Barber", "Massage", "Towing", "Makeup", "Photography"];
 
 export default function HomePage() {
   const [businesses, setBusinesses] = useState<any[]>([]);
-  const [active, setActive] = useState("All");
+  const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { (async () => { const { data } = await supabase.from("businesses").select("*").order("created_at", { ascending: false }); setBusinesses(data || []); setLoading(false); })(); }, []);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("businesses").select("*").order("created_at", { ascending: false });
+      setBusinesses(data || []);
+      setLoading(false);
+    })();
+  }, []);
 
   const filtered = businesses.filter((b) => {
-    const cat = (b.category || "").toLowerCase();
-    return (active === "All" || cat.includes(active.toLowerCase())) && (b.name || "").toLowerCase().includes(search.toLowerCase());
+    const matchCat = filter === "All" || b.category?.toLowerCase().includes(filter.toLowerCase());
+    const matchSearch = b.name.toLowerCase().includes(search.toLowerCase()) || b.category?.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
   });
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <h1 className="text-[28px] font-extrabold tracking-tight">Find trusted pros in Secunda 🎃</h1>
-        <p className="text-sm text-white/60 mt-1">Verified • Instant booking • Deposit protected 🦇</p>
-        <div className="relative my-4">
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search salon, nails, car wash..." className="w-full bg-white text-black border rounded-full px-5 py-3.5 text-sm focus:outline-none focus:border-[#FF4D00] placeholder:text-black/50 font-medium" />
+    <main className="min-h-screen bg-black text-white relative">
+      <HalloweenFloaties />
+
+      {/* HERO */}
+      <div className="max-w-6xl mx-auto px-6 pt-10 pb-6 relative z-10">
+        <h1 className="text-[32px] md:text-[42px] font-black leading-tight text-white">
+          Find & Book <br />
+          <span className="text-zinc-500">Local Hustlers</span> 🎃
+        </h1>
+        <p className="text-zinc-500 text-sm mt-3">Secunda • Evander • Trichardt • Verified businesses only</p>
+
+        {/* SEARCH */}
+        <div className="mt-6">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search nails, hair, towing..."
+            className="w-full bg-[#1A1A1A] border border-[#2A2A2A] text-white placeholder-zinc-500 rounded-full px-5 py-3.5 text-sm focus:outline-none focus:border-zinc-600"
+          />
         </div>
-        <div className="flex gap-2 overflow-x-auto no-scrollbar py-3">
+
+        {/* CATEGORIES */}
+        <div className="flex gap-2 mt-5 overflow-x-auto pb-2 scrollbar-hide">
           {categories.map((cat) => (
-            <button key={cat.label} onClick={() => setActive(cat.label)} className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold border transition-all ${active === cat.label? "bg-white text-black border-white" : "bg-white/10 text-white border-white/20"}`}>{cat.icon} {cat.label}</button>
+            <button
+              key={cat}
+              onClick={() => setFilter(cat)}
+              className={`px-4 py-2 rounded-full text-[13px] font-bold whitespace-nowrap border transition ${
+                filter === cat? "bg-white text-black border-white" : "bg-[#1A1A1A] text-zinc-400 border-[#2A2A2A] hover:text-white hover:border-zinc-600"
+              }`}
+            >
+              {cat}
+            </button>
           ))}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-          {filtered.map((biz) => <BusinessCard key={biz.id} business={biz} />)}
-        </div>
       </div>
+
+      {/* GRID */}
+      <div className="max-w-6xl mx-auto px-6 pb-10 relative z-10">
+        {loading? (
+          <p className="text-zinc-500 text-sm">Loading hustlers...</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((b) => (
+              <BusinessCard key={b.id} business={b} />
+            ))}
+          </div>
+        )}
+        {!loading && filtered.length === 0 && <p className="text-zinc-500 mt-8 text-sm text-center">No businesses found for "{search || filter}"</p>}
+      </div>
+
+      {/* FOOTER - Legal Links */}
+      <footer className="mt-16 bg-[#0a0a0a] border-t border-[#1A1A1A] py-8 relative z-10">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="text-center md:text-left">
+            <p className="text-white font-bold text-sm">HustleHub Secunda 🎃</p>
+            <p className="text-zinc-500 text-xs mt-1">Secunda • Evander • Trichardt</p>
+          </div>
+
+          <div className="flex gap-6 text-xs">
+            <a href="/terms" className="text-zinc-400 hover:text-white transition underline">Terms & Conditions</a>
+            <a href="/privacy" className="text-zinc-400 hover:text-white transition underline">Privacy Policy (POPIA)</a>
+            <a href="mailto:support@hustlehubsecunda.co.za" className="text-zinc-400 hover:text-white transition">Support</a>
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto px-6 mt-6 text-center">
+          <p className="text-[10px] text-zinc-600">© 2026 HustleHub Secunda. All bookings processed via WhatsApp Business API. Secured by Supabase.</p>
+        </div>
+      </footer>
     </main>
   );
 }
