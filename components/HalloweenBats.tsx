@@ -1,6 +1,6 @@
 "use client";
 
-export default function HalloweenBats() {
+export default function HalloweenBats(_props: {} = {}) {
   return (
     <>
       <div
