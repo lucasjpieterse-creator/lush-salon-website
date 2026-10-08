@@ -25,8 +25,8 @@ export default function ManagerDetail() {
   const stats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     const todays = bookings.filter(b => b.booking_date === today);
-    const revenueToday = todays.filter(b=> b.status!== 'cancelled').reduce((sum,b)=> sum + (Number(b.service_price)||0), 0);
-    const totalRevenue = bookings.filter(b=> b.status!== 'cancelled').reduce((sum,b)=> sum + (Number(b.service_price)||0), 0);
+    const revenueToday = todays.filter(b=>!b.status.includes('cancel')).reduce((sum,b)=> sum + (Number(b.service_price || b.price)||0), 0);
+    const totalRevenue = bookings.filter(b=>!b.status.includes('cancel')).reduce((sum,b)=> sum + (Number(b.service_price || b.price)||0), 0);
     return {
       todayCount: todays.length,
       revenueToday,
@@ -71,11 +71,16 @@ export default function ManagerDetail() {
 
   const handleCloseOut = () => {
     const today = new Date().toISOString().split('T')[0];
-    const todays = bookings.filter(b => b.booking_date === today && b.status!== 'cancelled');
-    const total = todays.reduce((sum,b)=> sum + (Number(b.service_price)||0), 0);
-    const list = todays.map(b => `• ${b.client_name} - ${b.service_name} R${b.service_price} at ${b.booking_time} (${b.status})`).join("\n");
-    const msg = `📊 DAILY CLOSE-OUT - ${business.name}\nDate: ${today}\n\n${list || "No bookings today"}\n\nTotal Bookings: ${todays.length}\nTotal Revenue: R${total}\nPending: ${bookings.filter(b=>b.booking_date===today && b.status==='pending').length}\n\nHustleHub Secunda`;
-    // FIXED: no phone param = no "not on WhatsApp" error
+    const todaysAll = bookings.filter(b => b.booking_date === today);
+    const todays = todaysAll.filter(b =>!b.status.includes('cancel'));
+    const total = todays.reduce((sum,b)=> sum + (Number(b.service_price || (b as any).price)||0), 0);
+    const list = todays.length > 0
+    ? todays.map(b => {
+          const priceVal = b.service_price || (b as any).price || 0;
+          return `• ${b.client_name} - ${b.service_name} R${priceVal} at ${b.booking_time} (${b.status})`;
+        }).join("\n")
+      : "No valid bookings today (only cancelled/tests)";
+    const msg = `📊 DAILY CLOSE-OUT - ${business.name}\nDate: ${today}\n\n${list}\n\nTotal Bookings: ${todays.length}\nTotal Revenue: R${total}\nPending: ${todaysAll.filter(b=>b.status==='pending').length}\nConfirmed: ${todaysAll.filter(b=>b.status==='confirmed').length}\n\nHustleHub Secunda`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
@@ -129,7 +134,7 @@ export default function ManagerDetail() {
               <div key={bk.id} className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[16px] p-4">
                 <div className="flex justify-between">
                   <p className="font-bold text-[14px]">{bk.client_name} • {bk.client_phone}</p>
-                  <span className={`text-[11px] px-2 py-1 rounded-full font-bold ${bk.status==="confirmed"?"bg-green-500/20 text-green-400":"bg-orange-500/20 text-orange-400"}`}>{bk.status} • R{bk.service_price}</span>
+                  <span className={`text-[11px] px-2 py-1 rounded-full font-bold ${bk.status==="confirmed"?"bg-green-500/20 text-green-400":"bg-orange-500/20 text-orange-400"}`}>{bk.status} • R{bk.service_price || (bk as any).price || 0}</span>
                 </div>
                 <p className="text-xs text-zinc-400 mt-1">{bk.service_name} • {bk.booking_date} {bk.booking_time}</p>
                 <div className="flex gap-2 mt-3 flex-wrap">
