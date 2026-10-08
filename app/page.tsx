@@ -25,16 +25,8 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchBiz() {
       setLoading(true);
-      const { data, error } = await supabase
-       .from("businesses")
-       .select("*")
-       .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("SUPABASE ERROR:", error);
-      } else {
-        setBusinesses(data || []);
-      }
+      const { data } = await supabase.from("businesses").select("*").order("created_at", { ascending: false });
+      setBusinesses(data || []);
       setLoading(false);
     }
     fetchBiz();
@@ -48,39 +40,36 @@ export default function HomePage() {
   });
 
   return (
-    <main className="min-h-screen bg-[#fafafa]">
+    <main className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* HEADER */}
         <div className="mb-6">
-          <h1 className="text-[28px] font-extrabold tracking-tight">
-            Find trusted pros in Secunda <span>⚡</span>
+          <h1 className="text-[28px] font-extrabold tracking-tight text-white">
+            Find trusted pros in Secunda <span>🎃</span>
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Verified businesses • Instant booking • Deposit protected
+          <p className="text-sm text-white/60 mt-1">
+            Verified businesses • Instant booking • Deposit protected 🦇
           </p>
         </div>
 
-        {/* SEARCH */}
         <div className="relative mb-3">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search salon, nails, car wash..."
-            className="w-full bg-white border border-gray-200 rounded-full px-5 py-3.5 text-sm focus:outline-none focus:border-black"
+            className="w-full bg-white text-black border border-white/20 rounded-full px-5 py-3.5 text-sm focus:outline-none focus:border-[#FF4D00] placeholder:text-black/50"
           />
-          <span className="absolute right-4 top-3.5 text-gray-400">🔍</span>
+          <span className="absolute right-4 top-3.5">🔍</span>
         </div>
 
-        {/* CATEGORY PILLS */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar py-3 -mx-4 px-4 sticky top-0 bg-[#fafafa]/80 backdrop-blur z-10">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar py-3 -mx-4 px-4 sticky top-[60px] bg-[#0a0a0a]/80 backdrop-blur z-10">
           {categories.map((cat) => (
             <button
               key={cat.label}
               onClick={() => setActive(cat.label)}
               className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold border transition-all ${
                 active === cat.label
-                 ? "bg-black text-white border-black shadow-md scale-105"
-                  : "bg-white text-gray-700 border-gray-200 hover:border-black hover:bg-white"
+                 ? "bg-white text-black border-white shadow-md scale-105"
+                  : "bg-white/10 text-white border-white/20 hover:border-white hover:bg-white/20"
               }`}
             >
               {cat.icon} {cat.label}
@@ -88,30 +77,14 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* LOADING */}
-        {loading && (
-          <p className="text-center text-sm text-gray-500 mt-20">Loading businesses...</p>
-        )}
+        {loading && <p className="text-center text-sm text-white/50 mt-20">Loading businesses... 🎃</p>}
 
-        {/* GRID */}
         {!loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             {filtered.map((biz) => (
               <BusinessCard key={biz.id} business={biz} />
             ))}
           </div>
-        )}
-
-        {!loading && filtered.length === 0 && businesses.length > 0 && (
-          <p className="text-center text-sm text-gray-500 mt-20">
-            No businesses found for "{active}"
-          </p>
-        )}
-
-        {!loading && businesses.length === 0 && (
-          <p className="text-center text-sm text-gray-500 mt-20">
-            No businesses in database. Check Supabase table `businesses`.
-          </p>
         )}
       </div>
     </main>
