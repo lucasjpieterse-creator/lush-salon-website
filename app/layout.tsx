@@ -19,9 +19,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a href="/" className="font-black text-[20px] tracking-tighter text-white">
               HUSTLEHUB<span className="text-[#FF4D00]">.</span> 🎃
             </a>
-            <a href="/manager" className="text-sm font-semibold border border-white/20 text-white px-4 py-2 rounded-full hover:bg-white hover:text-black transition">
-              For Business
-            </a>
+            <div className="flex items-center gap-2">
+              <a href="/manager" className="text-[13px] font-bold border border-white/20 bg-[#1A1A1A] text-zinc-300 px-4 py-2 rounded-full hover:text-white hover:border-zinc-500 transition">
+                Manager
+              </a>
+              <a href="/join" className="text-[13px] font-black bg-white text-black px-5 py-2 rounded-full hover:bg-zinc-200 transition">
+                + Add Your Hustle
+              </a>
+            </div>
           </div>
         </header>
 
