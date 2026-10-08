@@ -73,13 +73,10 @@ export default function ManagerDetail() {
     const today = new Date().toISOString().split('T')[0];
     const todays = bookings.filter(b => b.booking_date === today && b.status!== 'cancelled');
     const total = todays.reduce((sum,b)=> sum + (Number(b.service_price)||0), 0);
-    let ownerRaw = (business.owner_phone || business.phone || "").toString();
-    let ownerPhone = ownerRaw.replace(/\D/g, "");
-    if (ownerPhone.startsWith("0")) ownerPhone = "27" + ownerPhone.slice(1);
-    if (!ownerPhone) return alert("Add owner_phone to businesses table");
     const list = todays.map(b => `• ${b.client_name} - ${b.service_name} R${b.service_price} at ${b.booking_time} (${b.status})`).join("\n");
     const msg = `📊 DAILY CLOSE-OUT - ${business.name}\nDate: ${today}\n\n${list || "No bookings today"}\n\nTotal Bookings: ${todays.length}\nTotal Revenue: R${total}\nPending: ${bookings.filter(b=>b.booking_date===today && b.status==='pending').length}\n\nHustleHub Secunda`;
-    window.open(`https://api.whatsapp.com/send?phone=${ownerPhone}&text=${encodeURIComponent(msg)}`, "_blank");
+    // FIXED: no phone param = no "not on WhatsApp" error
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   if (!business) return <div className="min-h-screen bg-black text-white p-10">Loading {slug}...</div>;
