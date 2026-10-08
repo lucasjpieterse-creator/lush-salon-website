@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import SeasonalDecor from "@/components/SeasonalDecor";
 import Link from "next/link";
 
 const supabase = createClient(
@@ -21,8 +20,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <SeasonalDecor />
-
       <header className="p-4 flex justify-between items-center max-w-6xl mx-auto">
         <h1 className="text-xl font-black tracking-tight">HUSTLEHUB <span className="text-zinc-500">SECUNDA</span></h1>
         <div className="flex gap-2">
