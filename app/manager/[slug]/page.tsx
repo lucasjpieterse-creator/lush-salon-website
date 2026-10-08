@@ -22,7 +22,6 @@ export default function ManagerDetail() {
     })();
   }, [slug]);
 
-  // --- STATS ---
   const stats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     const todays = bookings.filter(b => b.booking_date === today);
@@ -42,7 +41,6 @@ export default function ManagerDetail() {
     let phone = phoneRaw.toString().replace(/\D/g, "");
     if (phone.startsWith("0")) phone = "27" + phone.slice(1);
     if (!phone) return alert("No client phone");
-    // FIXED: use api.whatsapp.com + encoded text = always prefilled
     const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
@@ -50,12 +48,7 @@ export default function ManagerDetail() {
   const handleConfirm = async (bk: any) => {
     await supabase.from("bookings").update({ status: "confirmed" }).eq("id", bk.id);
     setBookings(bookings.map(b => b.id === bk.id? {...b, status: "confirmed"} : b));
-    const msg = `Hi ${bk.client_name}! ✅ Your booking at ${business.name} is CONFIRMED.
-
-Service: ${bk.service_name} - R${bk.service_price}
-Date: ${bk.booking_date} at ${bk.booking_time}
-
-See you soon! Thank you for booking on HustleHub Secunda.`;
+    const msg = `Hi ${bk.client_name}! ✅ Your booking at ${business.name} is CONFIRMED.\n\nService: ${bk.service_name} - R${bk.service_price}\nDate: ${bk.booking_date} at ${bk.booking_time}\n\nSee you soon! Thank you for booking on HustleHub Secunda.`;
     waToClient(bk.client_phone, msg);
   };
 
@@ -76,6 +69,19 @@ See you soon! Thank you for booking on HustleHub Secunda.`;
     waToClient(bk.client_phone, msg);
   };
 
+  const handleCloseOut = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const todays = bookings.filter(b => b.booking_date === today && b.status!== 'cancelled');
+    const total = todays.reduce((sum,b)=> sum + (Number(b.service_price)||0), 0);
+    let ownerRaw = (business.owner_phone || business.phone || "").toString();
+    let ownerPhone = ownerRaw.replace(/\D/g, "");
+    if (ownerPhone.startsWith("0")) ownerPhone = "27" + ownerPhone.slice(1);
+    if (!ownerPhone) return alert("Add owner_phone to businesses table");
+    const list = todays.map(b => `• ${b.client_name} - ${b.service_name} R${b.service_price} at ${b.booking_time} (${b.status})`).join("\n");
+    const msg = `📊 DAILY CLOSE-OUT - ${business.name}\nDate: ${today}\n\n${list || "No bookings today"}\n\nTotal Bookings: ${todays.length}\nTotal Revenue: R${total}\nPending: ${bookings.filter(b=>b.booking_date===today && b.status==='pending').length}\n\nHustleHub Secunda`;
+    window.open(`https://api.whatsapp.com/send?phone=${ownerPhone}&text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
   if (!business) return <div className="min-h-screen bg-black text-white p-10">Loading {slug}...</div>;
 
   const bookingLink = `https://hustlehub-secunda.co.za/${business.slug}`;
@@ -85,7 +91,6 @@ See you soon! Thank you for booking on HustleHub Secunda.`;
     <div className="min-h-screen bg-black text-white p-6 max-w-7xl mx-auto">
       <Link href="/manager" className="text-sm text-zinc-500 hover:text-white">← Back to Manager Hub</Link>
 
-      {/* STATS BAR */}
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[16px] p-4">
           <p className="text-[11px] text-zinc-500 uppercase tracking-widest">Today Bookings</p>
@@ -105,6 +110,10 @@ See you soon! Thank you for booking on HustleHub Secunda.`;
           <p className="text-2xl font-black mt-1">{stats.pending} / {stats.confirmed}</p>
         </div>
       </div>
+
+      <button onClick={handleCloseOut} className="mt-3 w-full md:w-auto bg-[#1A1A1A] border border-white/10 hover:bg-white hover:text-black transition text-white px-5 py-3 rounded-full text-xs font-bold">
+        📊 Send Daily Close-Out to My WhatsApp
+      </button>
 
       <div className="mt-6 grid md:grid-cols-[340px_1fr] gap-6 items-start">
         <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[24px] p-5 sticky top-6">
