@@ -1,9 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import BusinessCard from "@/components/BusinessCard";
-import HalloweenFloaties from "@/components/HalloweenFloaties";
 
 const categories = [
   { id: "All", label: "✨ All" },
@@ -39,19 +37,10 @@ export default function HomePage() {
   });
 
   return (
-    <main className="min-h-screen bg-black text-white relative">
-      <HalloweenFloaties />
+    <main className="min-h-screen bg-black text-white relative z-10">
+      {/* NO HEADER HERE - HEADER IS IN layout.tsx */}
 
-      {/* FIXED HEADER - ONLY 2 BUTTONS */}
-      <header className="max-w-6xl mx-auto px-6 pt-6 flex justify-between items-center relative z-20">
-        <Link href="/" className="font-black text-[16px] tracking-tighter">HUSTLEHUB SECUNDA 🎃</Link>
-        <div className="flex gap-2 items-center">
-          <Link href="/manager" className="text-[12px] font-bold border border-[#2A2A2A] bg-[#1A1A1A] text-zinc-300 hover:text-white px-4 py-2 rounded-full">Manager</Link>
-          <Link href="/join" className="text-[12px] font-black bg-white text-black hover:bg-zinc-200 px-5 py-2 rounded-full">+ Add Your Hustle</Link>
-        </div>
-      </header>
-
-      <div className="max-w-6xl mx-auto px-6 pt-10 pb-4 relative z-10">
+      <div className="max-w-6xl mx-auto px-6 pt-10 pb-4">
         <h1 className="text-[32px] md:text-[48px] font-black leading-[0.95] tracking-tight">
           Find & Book <br />
           <span className="text-zinc-500">Local Hustlers</span> 🎃
@@ -74,7 +63,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 pb-10 relative z-10">
+      <div className="max-w-6xl mx-auto px-6 pb-10">
         {loading? <p className="text-zinc-500 text-sm animate-pulse">Loading hustlers...</p> : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((b) => <BusinessCard key={b.id} business={b} />)}
