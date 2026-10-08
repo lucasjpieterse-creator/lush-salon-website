@@ -45,26 +45,23 @@ export default function BusinessPage() {
     if (!waRaw) return alert("Business WhatsApp missing");
     setLoading(true);
 
-    // SAVE WITH ALL COLUMN NAMES so Manager dashboard reads it correctly
     const { data: booking, error } = await supabase.from("bookings").insert({
       business_id: business.id,
-      // support both schemas
-      service: selectedService.name,
       service_name: selectedService.name,
       service_price: selectedService.price,
-      date: selectedDate,
       booking_date: selectedDate,
-      time: selectedTime,
       booking_time: selectedTime,
-      customer_name: name,
-      client_name: name,
-      customer_phone: phone,
       client_phone: phone,
-      phone: phone,
+      client_name: name,
       status: "pending"
     }).select().single();
 
-    if (error) { setLoading(false); alert(error.message); console.error(error); return; }
+    if (error) {
+      setLoading(false);
+      alert(error.message);
+      console.error(error);
+      return;
+    }
 
     const cleanWa = waRaw.toString().replace(/\D/g,"");
     const dateObj = dates.find(d => d.full === selectedDate);
@@ -80,7 +77,10 @@ Please confirm in Manager Dashboard.`;
     window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`, "_blank");
     setLoading(false);
     alert("Booked! Business will confirm on WhatsApp.");
-    setSelectedDate(""); setSelectedTime(""); setName(""); setPhone("");
+    setSelectedDate("");
+    setSelectedTime("");
+    setName("");
+    setPhone("");
   }
 
   if (!business) return <div className="p-10 text-white bg-black min-h-screen">Loading...</div>;
