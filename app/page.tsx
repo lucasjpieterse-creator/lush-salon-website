@@ -37,7 +37,7 @@ export default function HomePage() {
   });
 
   return (
-    <main className="min-h-screen bg-black text-white relative z-10">
+    <main className="min-h-screen bg-black text-white relative">
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-4">
         <h1 className="text-[32px] md:text-[48px] font-black leading-[0.95] tracking-tight">
           Find & Book <br />
