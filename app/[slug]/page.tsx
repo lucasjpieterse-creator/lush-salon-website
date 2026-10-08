@@ -27,6 +27,16 @@ export default function BookingPage() {
       const { data: biz } = await supabase.from("businesses").select("*").eq("slug", slug).single();
       if (!biz) { setLoading(false); return; }
       setBusiness(biz);
+
+      // --- CYBERPUNK CEO VIEW COUNTER (non-blocking, no delay for user) ---
+      supabase.rpc("increment_views", { row_id: biz.id }).then(({ error }) => {
+        if (error) {
+          // Fallback if RPC doesn't exist yet
+          supabase.from("businesses").update({ views: (biz.views || 0) + 1 }).eq("id", biz.id).then(()=>{});
+        }
+      });
+      supabase.from("business_views").insert({ business_id: biz.id }).then(()=>{});
+
       const { data: servs } = await supabase.from("services").select("*").eq("business_id", biz.id);
       setServices(servs || []);
       if (servs && servs[0]) setSelectedService(servs[0]);
@@ -55,7 +65,6 @@ export default function BookingPage() {
     const { error } = await supabase.from("bookings").insert(payload);
     if (error) return alert("Booking failed: " + error.message);
 
-    // --- AUTOMATIC WHATSAPP TO OWNER ---
     const ownerRaw = (business.owner_phone || business.phone || business.whatsapp || "").toString();
     let ownerPhone = ownerRaw.replace(/\D/g, "");
     if (ownerPhone.startsWith("0")) ownerPhone = "27" + ownerPhone.slice(1);
@@ -78,7 +87,7 @@ export default function BookingPage() {
           <h1 className="text-3xl font-black">✅ Booked!</h1>
           <p className="text-zinc-400 mt-3 text-sm">Your booking at {business.name} for {formData.booking_date} at {formData.booking_time} is pending confirmation. The owner was notified on WhatsApp.</p>
           <p className="text-white font-bold mt-4">{selectedService?.name} - R{selectedService?.price}</p>
-          <button onClick={()=>setSuccess(false)} className="mt-6 bg-white text-black w-full py-3 rounded-full font-bold text-sm">Book Another</button>
+          <button onClick={() => setSuccess(false)} className="mt-6 bg-white text-black w-full py-3 rounded-full font-bold text-sm">Book Another</button>
         </div>
       </div>
     );
@@ -94,7 +103,7 @@ export default function BookingPage() {
           <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Select Service</p>
           <div className="mt-3 grid gap-2">
             {services.map(s => (
-              <button key={s.id} onClick={()=>setSelectedService(s)} className={`text-left p-4 rounded-[14px] border text-sm font-bold flex justify-between ${selectedService?.id===s.id? "bg-white text-black border-white" : "bg-[#0F0F0F] border-[#2A2A2A] text-white"}`}>
+              <button key={s.id} onClick={() => setSelectedService(s)} className={`text-left p-4 rounded-[14px] border text-sm font-bold flex justify-between ${selectedService?.id === s.id? "bg-white text-black border-white" : "bg-[#0F0F0F] border-[#2A2A2A] text-white"}`}>
                 <span>{s.name}</span><span>R{s.price}</span>
               </button>
             ))}
@@ -102,13 +111,13 @@ export default function BookingPage() {
         </div>
 
         <form onSubmit={handleBooking} className="mt-6 space-y-3">
-          <input placeholder="Your Name" value={formData.client_name} onChange={e=>setFormData({...formData, client_name: e.target.value})} className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white" />
-          <input placeholder="WhatsApp Number e.g 0721234567" value={formData.client_phone} onChange={e=>setFormData({...formData, client_phone: e.target.value})} className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white" />
+          <input placeholder="Your Name" value={formData.client_name} onChange={e => setFormData({...formData, client_name: e.target.value })} className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white" />
+          <input placeholder="WhatsApp Number e.g 0721234567" value={formData.client_phone} onChange={e => setFormData({...formData, client_phone: e.target.value })} className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white" />
           <div className="grid grid-cols-2 gap-2">
-            <input type="date" value={formData.booking_date} onChange={e=>setFormData({...formData, booking_date: e.target.value})} className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white focus:outline-none focus:border-white" />
-            <input type="time" value={formData.booking_time} onChange={e=>setFormData({...formData, booking_time: e.target.value})} className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white focus:outline-none focus:border-white" />
+            <input type="date" value={formData.booking_date} onChange={e => setFormData({...formData, booking_date: e.target.value })} className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white focus:outline-none focus:border-white" />
+            <input type="time" value={formData.booking_time} onChange={e => setFormData({...formData, booking_time: e.target.value })} className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white focus:outline-none focus:border-white" />
           </div>
-          <button type="submit" className="w-full bg-white text-black py-4 rounded-full font-black text-sm mt-2">Confirm Booking - R{selectedService?.price||""}</button>
+          <button type="submit" className="w-full bg-white text-black py-4 rounded-full font-black text-sm mt-2">Confirm Booking - R{selectedService?.price || ""}</button>
           <p className="text-[11px] text-zinc-600 text-center mt-2">You will be redirected to WhatsApp to notify the owner automatically</p>
         </form>
       </div>
