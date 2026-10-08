@@ -23,7 +23,7 @@ export default function BusinessCard({ business }: { business: any }) {
       <div className="p-4 bg-[#1A1A1A]">
         <h3 className="font-bold text-[16px] text-white">{business.name}</h3>
         <p className="text-[12px] text-zinc-400 mt-1">✅ Instant confirmation • Deposit protected</p>
-        <Link href={`/business/${business.id}`}>
+        <Link href={`/${business.slug}`}>
           <button className="mt-4 w-full bg-white text-black hover:bg-zinc-200 font-black text-[13px] py-3 rounded-full transition">
             BOOK APPOINTMENT ⚡
           </button>
