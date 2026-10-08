@@ -15,54 +15,12 @@ export default function HalloweenBats() {
           overflow: "hidden",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            top: "10%",
-            left: "-10%",
-            fontSize: "32px",
-            animation: "fly1 12s linear infinite",
-          }}
-        >
-          🦇
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            top: "25%",
-            left: "-15%",
-            fontSize: "24px",
-            animation: "fly1 16s linear infinite 2s",
-          }}
-        >
-          🦇
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            top: "5%",
-            left: "-5%",
-            fontSize: "18px",
-            animation: "fly1 10s linear infinite 1s",
-          }}
-        >
-          🦇
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            top: "40%",
-            left: "-10%",
-            fontSize: "28px",
-            animation: "fly1 14s linear infinite 3s",
-          }}
-        >
-          🦇
-        </div>
+        <div style={{ position: "absolute", top: "10%", left: "-10%", fontSize: "32px", animation: "batFly 12s linear infinite" }}>🦇</div>
+        <div style={{ position: "absolute", top: "25%", left: "-15%", fontSize: "24px", animation: "batFly 16s linear infinite 2s" }}>🦇</div>
+        <div style={{ position: "absolute", top: "5%", left: "-5%", fontSize: "18px", animation: "batFly 10s linear infinite 1s" }}>🦇</div>
       </div>
-
       <style>{`
-        @keyframes fly1 {
+        @keyframes batFly {
           0% { transform: translateX(0) translateY(0); opacity: 0; }
           10% { opacity: 1; }
           90% { opacity: 1; }
