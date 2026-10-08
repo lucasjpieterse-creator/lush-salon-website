@@ -38,31 +38,25 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-black text-white relative z-10">
-      {/* NO HEADER HERE - HEADER IS IN layout.tsx */}
-
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-4">
         <h1 className="text-[32px] md:text-[48px] font-black leading-[0.95] tracking-tight">
           Find & Book <br />
           <span className="text-zinc-500">Local Hustlers</span> 🎃
         </h1>
-
         <div className="mt-6">
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search nails, hair, towing..." className="w-full bg-[#1A1A1A] border border-[#2A2A2A] text-white placeholder-zinc-500 rounded-full px-5 py-3.5 text-sm focus:outline-none focus:border-zinc-600" />
         </div>
-
         <div className="mt-4 flex flex-wrap gap-2">
           <span className="inline-flex items-center gap-1.5 bg-[#101010] border border-[#222] px-3 py-1.5 rounded-full text-[11px] font-bold text-zinc-300">🔒 POPIA Compliant</span>
           <span className="inline-flex items-center gap-1.5 bg-[#101010] border border-[#222] px-3 py-1.5 rounded-full text-[11px] font-bold text-zinc-300">⚡ Instant WhatsApp Receipts</span>
           <span className="inline-flex items-center gap-1.5 bg-[#101010] border border-[#222] px-3 py-1.5 rounded-full text-[11px] font-bold text-zinc-300">🇿🇦 100% Verified Secunda Providers</span>
         </div>
-
         <div className="flex gap-2 mt-6 overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 md:mx-0 md:px-0">
           {categories.map((cat) => (
             <button key={cat.id} onClick={() => setFilter(cat.id)} className={`px-4 py-2.5 rounded-full text-[13px] font-black whitespace-nowrap border transition-all ${filter === cat.id? "bg-white text-black border-white" : "bg-[#1A1A1A] text-zinc-400 border-[#2A2A2A] hover:text-white"}`}>{cat.label}</button>
           ))}
         </div>
       </div>
-
       <div className="max-w-6xl mx-auto px-6 pb-10">
         {loading? <p className="text-zinc-500 text-sm animate-pulse">Loading hustlers...</p> : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
