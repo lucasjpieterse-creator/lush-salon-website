@@ -32,21 +32,25 @@ export default function BusinessPage() {
   function handleWhatsAppBook() {
     if (!selectedService) { alert("Select a service"); return; }
     if (!selectedTime) { alert("Select a time"); return; }
-    if (!business?.whatsapp) { alert("Business WhatsApp not set"); return; }
 
-    const cleanWa = business.whatsapp.replace(/\D/g,""); // remove spaces
+    const waRaw = business?.whatsapp_number || business?.whatsapp || business?.phone || "";
+
+    if (!waRaw) {
+      alert(`WhatsApp missing for ${business?.name}`);
+      return;
+    }
+
+    const cleanWa = waRaw.toString().replace(/\D/g,"");
     const msg = `Hi ${business.name}! 👋
 
 I want to book:
-• Service: ${selectedService.name} - R${selectedService.price}
-• Time: ${selectedTime} today
-• My number: ${phone || "I'll call"}
+- Service: ${selectedService.name} - R${selectedService.price}
+- Time: ${selectedTime} today
+- My number: ${phone || "I'll call"}
 
-Found you on HustleHub Secunda 🎃`;
+Found you on HustleHub Secunda`;
 
-    // track click
     supabase.from("business_clicks").insert({ business_id: business.id, click_type: "whatsapp" }).then(()=>{},()=>{});
-
     window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
@@ -59,7 +63,6 @@ Found you on HustleHub Secunda 🎃`;
         <h1 className="text-3xl font-black mt-4">{business.name}</h1>
         <p className="text-zinc-500">{business.category}</p>
 
-        {/* Step 1: Service */}
         <div className="mt-8">
           <h2 className="font-bold text-sm tracking-widest text-zinc-400">1. CHOOSE SERVICE</h2>
           <div className="mt-3 space-y-3">
@@ -72,7 +75,6 @@ Found you on HustleHub Secunda 🎃`;
           </div>
         </div>
 
-        {/* Step 2: Time */}
         {selectedService && (
           <div className="mt-8">
             <h2 className="font-bold text-sm tracking-widest text-zinc-400">2. CHOOSE TIME</h2>
@@ -86,16 +88,14 @@ Found you on HustleHub Secunda 🎃`;
           </div>
         )}
 
-        {/* Step 3: Your number + Book */}
         {selectedService && selectedTime && (
           <div className="mt-8">
             <h2 className="font-bold text-sm tracking-widest text-zinc-400">3. BOOK ON WHATSAPP</h2>
             <input value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder="Your WhatsApp number (optional)" className="border border-zinc-800 bg-zinc-900 p-4 w-full mt-3 rounded-2xl text-white" />
-
             <button onClick={handleWhatsAppBook} className="mt-4 w-full bg-[#25D366] text-black py-4 rounded-full font-black text-[15px]">
               Book {selectedService.name} at {selectedTime} on WhatsApp →
             </button>
-            <p className="text-[11px] text-zinc-500 mt-3 text-center">You will be redirected to WhatsApp with all details filled</p>
+            <p className="text-[11px] text-zinc-500 mt-3 text-center">Opens WhatsApp to {business.whatsapp_number}</p>
           </div>
         )}
       </div>
