@@ -1,17 +1,18 @@
-import "./globals.css";
 import type { Metadata } from "next";
-import ClientLayoutWrapper from "@/components/ClientLayoutWrapper";
+import "./globals.css";
+import HalloweenBats from "@/components/HalloweenBats";
 
 export const metadata: Metadata = {
-  title: "HustleHub Secunda - Book Trusted Pros",
-  description: "Verified salons, nail techs, car wash & more in Secunda. Instant booking.",
+  title: "HustleHub",
+  description: "Find & Book Local Hustlers",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-[#0a0a0a] text-white antialiased relative">
-        <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
+      <body className="bg-black">
+        {children}
+        <HalloweenBats />
       </body>
     </html>
   );

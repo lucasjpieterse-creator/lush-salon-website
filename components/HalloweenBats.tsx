@@ -1,26 +1,74 @@
 "use client";
-import { useEffect, useState } from "react";
 
 export default function HalloweenBats() {
   return (
-    <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
-      {/* bat 1 */}
-      <div className="absolute top-[5%] left-[-10%] animate-[fly_12s_linear_infinite] text-[28px]">🦇</div>
-      {/* bat 2 */}
-      <div className="absolute top-[15%] left-[-15%] animate-[fly_18s_linear_infinite_2s] text-[22px]">🦇</div>
-      {/* bat 3 */}
-      <div className="absolute top-[25%] left-[-10%] animate-[fly_15s_linear_infinite_4s] text-[18px]">🦇</div>
-      {/* bat 4 small */}
-      <div className="absolute top-[8%] left-[-5%] animate-[fly_10s_linear_infinite_1s] text-[14px]">🦇</div>
+    <>
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          pointerEvents: "none",
+          zIndex: 2147483647,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: "10%",
+            left: "-10%",
+            fontSize: "32px",
+            animation: "fly1 12s linear infinite",
+          }}
+        >
+          🦇
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            top: "25%",
+            left: "-15%",
+            fontSize: "24px",
+            animation: "fly1 16s linear infinite 2s",
+          }}
+        >
+          🦇
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            top: "5%",
+            left: "-5%",
+            fontSize: "18px",
+            animation: "fly1 10s linear infinite 1s",
+          }}
+        >
+          🦇
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            top: "40%",
+            left: "-10%",
+            fontSize: "28px",
+            animation: "fly1 14s linear infinite 3s",
+          }}
+        >
+          🦇
+        </div>
+      </div>
 
-      <style jsx>{`
-        @keyframes fly {
-          0% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 0; }
+      <style>{`
+        @keyframes fly1 {
+          0% { transform: translateX(0) translateY(0); opacity: 0; }
           10% { opacity: 1; }
           90% { opacity: 1; }
-          100% { transform: translateX(120vw) translateY(-20vh) rotate(20deg); opacity: 0; }
+          100% { transform: translateX(120vw) translateY(-30vh); opacity: 0; }
         }
       `}</style>
-    </div>
+    </>
   );
 }
