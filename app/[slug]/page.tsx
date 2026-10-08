@@ -43,10 +43,9 @@ export default function BusinessPage() {
     if (!waRaw) return alert("WhatsApp missing");
     setLoading(true);
 
-    // 1. Save booking for owner alerts
+    // FIXED - no business_name column
     const { data: booking, error } = await supabase.from("bookings").insert({
       business_id: business.id,
-      business_name: business.name,
       service_name: selectedService.name,
       service_price: selectedService.price,
       booking_date: selectedDate,
@@ -57,7 +56,6 @@ export default function BusinessPage() {
 
     if (error) { setLoading(false); alert(error.message); return; }
 
-    // 2. Open WhatsApp to business
     const cleanWa = waRaw.toString().replace(/\D/g,"");
     const dateObj = dates.find(d => d.full === selectedDate);
     const msg = `Hi ${business.name}! 👋 New booking #${booking.id.slice(0,6)}
@@ -71,7 +69,7 @@ Please confirm in Manager Dashboard.`;
 
     window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`, "_blank");
     setLoading(false);
-    alert("Booked! Business will confirm on WhatsApp.");
+    alert("Booked! Business will confirm.");
   }
 
   if (!business) return <div className="p-10 text-white bg-black min-h-screen">Loading...</div>;
