@@ -10,15 +10,22 @@ export default function SeasonalDecor() {
         <span className="absolute top-[8%] left-0 text-lg animate-[fly_12s_linear_infinite_2s]">🦇</span>
       </div>
 
-      {/* Left Pumpkin - SINGLE + FAST FLOAT */}
-      <div className="fixed top-2 left-2 md:top-4 md:left-4 z-50 pointer-events-none select-none animate-[pumpkinFloat_2.2s_ease-in-out_infinite]">
+      {/* Top Left */}
+      <div className="fixed top-2 left-2 md:top-4 md:left-4 z-50 pointer-events-none select-none animate-[pumpkinFloat_1.8s_ease-in-out_infinite]">
         <div className="text-3xl md:text-5xl drop-shadow-[0_0_12px_rgba(255,140,0,0.8)]">
           🎃
         </div>
       </div>
 
-      {/* Right Pumpkin - SINGLE + FAST FLOAT */}
-      <div className="fixed top-2 right-2 md:top-4 md:right-4 z-50 pointer-events-none select-none animate-[pumpkinFloat_2.2s_ease-in-out_infinite_0.3s]">
+      {/* Top Right */}
+      <div className="fixed top-2 right-2 md:top-4 md:right-4 z-50 pointer-events-none select-none animate-[pumpkinFloat_1.8s_ease-in-out_infinite_0.2s]">
+        <div className="text-3xl md:text-5xl drop-shadow-[0_0_12px_rgba(255,140,0,0.8)]">
+          🎃
+        </div>
+      </div>
+
+      {/* Bottom Right - BACK */}
+      <div className="fixed bottom-4 right-2 md:bottom-6 md:right-4 z-50 pointer-events-none select-none animate-[pumpkinFloat_1.8s_ease-in-out_infinite_0.4s]">
         <div className="text-3xl md:text-5xl drop-shadow-[0_0_12px_rgba(255,140,0,0.8)]">
           🎃
         </div>
@@ -34,7 +41,7 @@ export default function SeasonalDecor() {
         }
         @keyframes pumpkinFloat {
           0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
+          50% { transform: translateY(-14px); }
         }
       `}</style>
     </>
