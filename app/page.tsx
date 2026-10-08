@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import BusinessCard from "@/components/BusinessCard";
+import BusinessCard from "../components/BusinessCard";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
