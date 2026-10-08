@@ -1,78 +1,62 @@
 import Link from "next/link";
 
-type Props = {
-  business: any;
+type BusinessCardProps = {
+  business: {
+    id: string;
+    name: string;
+    category: string;
+    area: string;
+    price_from?: string;
+    is_verified: boolean;
+    is_special?: boolean;
+    image_url?: string;
+  };
 };
 
-export default function BusinessCard({ business }: Props) {
-  const rawPrice = business.base_price?? business.price?? null;
-  let price = rawPrice? Number(rawPrice) : null;
-  let pricingType = business.pricing_type || "fixed";
-
-  // If price is 0 or null -> force custom
-  if (!price || price === 0) {
-    pricingType = "custom";
-    price = null;
-  }
-
-  let buttonLabel = "Book Now →";
-  let badge = null;
-
-  if (pricingType === "variable" && price) {
-    buttonLabel = "Get Estimate →";
-    badge = (
-      <span className="text-[11px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-full">
-        From R{price} (Estimate)
-      </span>
-    );
-  } else if (pricingType === "custom" ||!price) {
-    buttonLabel = "Request Free Quote →";
-    badge = (
-      <span className="text-[11px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full">
-        Custom Quote Required
-      </span>
-    );
-  } else {
-    // fixed
-    buttonLabel = "Book Now →";
-    badge = (
-      <span className="text-[11px] font-black bg-white text-black px-2.5 py-1 rounded-full">
-        R{price} / session
-      </span>
-    );
-  }
+export default function BusinessCard({ business }: BusinessCardProps) {
+  const isSpecial = business.is_special;
 
   return (
-    <Link href={`/${business.slug}`} className="block group">
-      <div className="bg-[#111] border border-[#222] rounded-[22px] p-4 hover:border-zinc-700 transition-all hover:bg-[#151515]">
-        <div className="flex justify-between items-start gap-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-black text-[16px] leading-tight truncate text-white">
-              {business.name}
-            </h3>
-            <p className="text-zinc-500 text-[12px] mt-1 capitalize">
-              {business.category} • {business.location || "Secunda"}
-            </p>
-          </div>
-          <div className="w-8 h-8 bg-[#1A1A1A] border border-[#2A2A2A] rounded-full flex items-center justify-center text-[12px] text-purple-400">
-            ✔
-          </div>
-        </div>
+    <Link href={`/${business.id}`}>
+      <div
+        className={`
+          group relative rounded-[20px] border p-4 bg-[#121212]
+          transition-all duration-300 hover:scale-[1.02] cursor-pointer overflow-hidden
+          ${isSpecial
+           ? "border-[#FF4D00] shadow-[0_0_25px_rgba(255,77,0,0.5),0_0_50px_rgba(255,77,0,0.2)] ring-2 ring-[#FF4D00]/40"
+            : "border-white/10 hover:border-white/20"
+          }
+        `}
+      >
+        {isSpecial && (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-transparent pointer-events-none" />
+            <div className="absolute -top-2 -right-2 bg-[#FF4D00] text-black text-[10px] font-black px-3 py-1 rounded-full z-20 animate-pulse shadow-lg">
+              🔥 SPECIAL
+            </div>
+          </>
+        )}
 
-        <div className="mt-3 flex items-center gap-2">
-          {badge}
-        </div>
-
-        <div className="mt-3 flex gap-2">
-          <span className="text-[10px] text-zinc-500">🔒 POPIA</span>
-          <span className="text-[10px] text-zinc-500">• ⚡ WhatsApp Receipt</span>
-          <span className="text-[10px] text-zinc-500">• 🇿🇦 Local</span>
-        </div>
-
-        <div className="mt-4">
-          <div className="w-full bg-white text-black text-center font-black text-[13px] py-3 rounded-full group-hover:bg-zinc-200 transition">
-            {buttonLabel}
+        <div className="relative z-10">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className={`font-bold text-[16px] leading-tight ${isSpecial? "text-orange-100" : "text-white"}`}>
+                {business.name}
+              </h3>
+              <p className="text-[12px] text-zinc-500 mt-1">{business.category} • {business.area}</p>
+            </div>
+            {business.is_verified && (
+              <span className="bg-green-500/20 text-green-300 border border-green-500/30 text-[9px] font-bold px-2 py-1 rounded-full">✓ VERIFIED</span>
+            )}
           </div>
+
+          {business.price_from && (
+            <p className="text-[13px] font-semibold text-zinc-300 mt-3">From R{business.price_from}</p>
+          )}
+
+          {isSpecial && (
+            <p className="text-[11px] text-[#FF8A4D] mt-2 font-bold tracking-wide">⚡ Limited Time Special — Book Now!</p>
+          )}
         </div>
       </div>
     </Link>
