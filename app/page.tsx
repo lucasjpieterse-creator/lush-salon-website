@@ -5,7 +5,18 @@ import { supabase } from "@/lib/supabase";
 import BusinessCard from "@/components/BusinessCard";
 import HalloweenFloaties from "@/components/HalloweenFloaties";
 
-const categories = ["All", "Nails", "Hair", "Barber", "Massage", "Towing", "Makeup", "Photography"];
+const categories = [
+  { id: "All", label: "✨ All" },
+  { id: "Hair", label: "💇‍♀️ Hair & Beauty" },
+  { id: "Barber", label: "💈 Barber" },
+  { id: "Nails", label: "💅 Nails" },
+  { id: "Auto", label: "🚗 Auto Care" },
+  { id: "Towing", label: "🚛 Towing" },
+  { id: "Pet", label: "🐶 Pet Care" },
+  { id: "Handyman", label: "🔧 Handyman" },
+  { id: "Cakes", label: "🍰 Custom Cakes" },
+  { id: "Massage", label: "💆 Massage" },
+];
 
 export default function HomePage() {
   const [businesses, setBusinesses] = useState<any[]>([]);
@@ -22,7 +33,7 @@ export default function HomePage() {
   }, []);
 
   const filtered = businesses.filter((b) => {
-    const matchCat = filter === "All" || b.category?.toLowerCase().includes(filter.toLowerCase());
+    const matchCat = filter === "All" || b.category?.toLowerCase().includes(filter.toLowerCase()) || (filter === "Auto" && b.category?.toLowerCase().includes("car"));
     const matchSearch = b.name.toLowerCase().includes(search.toLowerCase()) || b.category?.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
@@ -31,81 +42,45 @@ export default function HomePage() {
     <main className="min-h-screen bg-black text-white relative">
       <HalloweenFloaties />
 
-      {/* HEADER */}
+      {/* FIXED HEADER - ONLY 2 BUTTONS */}
       <header className="max-w-6xl mx-auto px-6 pt-6 flex justify-between items-center relative z-20">
         <Link href="/" className="font-black text-[16px] tracking-tighter">HUSTLEHUB SECUNDA 🎃</Link>
         <div className="flex gap-2 items-center">
-          <Link href="/manager" className="text-[12px] font-bold border border-[#2A2A2A] bg-[#1A1A1A] text-zinc-300 hover:text-white px-4 py-2 rounded-full transition">
-            Manager
-          </Link>
-          <Link href="/join" className="text-[12px] font-black bg-white text-black hover:bg-zinc-200 px-5 py-2 rounded-full transition">
-            + Add Your Hustle
-          </Link>
+          <Link href="/manager" className="text-[12px] font-bold border border-[#2A2A2A] bg-[#1A1A1A] text-zinc-300 hover:text-white px-4 py-2 rounded-full">Manager</Link>
+          <Link href="/join" className="text-[12px] font-black bg-white text-black hover:bg-zinc-200 px-5 py-2 rounded-full">+ Add Your Hustle</Link>
         </div>
       </header>
 
-      {/* HERO */}
-      <div className="max-w-6xl mx-auto px-6 pt-10 pb-6 relative z-10">
-        <h1 className="text-[32px] md:text-[42px] font-black leading-tight text-white">
+      <div className="max-w-6xl mx-auto px-6 pt-10 pb-4 relative z-10">
+        <h1 className="text-[32px] md:text-[48px] font-black leading-[0.95] tracking-tight">
           Find & Book <br />
           <span className="text-zinc-500">Local Hustlers</span> 🎃
         </h1>
-        <p className="text-zinc-500 text-sm mt-3">Secunda • Evander • Trichardt • Verified businesses only</p>
 
         <div className="mt-6">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search nails, hair, towing..."
-            className="w-full bg-[#1A1A1A] border border-[#2A2A2A] text-white placeholder-zinc-500 rounded-full px-5 py-3.5 text-sm focus:outline-none focus:border-zinc-600"
-          />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search nails, hair, towing..." className="w-full bg-[#1A1A1A] border border-[#2A2A2A] text-white placeholder-zinc-500 rounded-full px-5 py-3.5 text-sm focus:outline-none focus:border-zinc-600" />
         </div>
 
-        <div className="flex gap-2 mt-5 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1.5 bg-[#101010] border border-[#222] px-3 py-1.5 rounded-full text-[11px] font-bold text-zinc-300">🔒 POPIA Compliant</span>
+          <span className="inline-flex items-center gap-1.5 bg-[#101010] border border-[#222] px-3 py-1.5 rounded-full text-[11px] font-bold text-zinc-300">⚡ Instant WhatsApp Receipts</span>
+          <span className="inline-flex items-center gap-1.5 bg-[#101010] border border-[#222] px-3 py-1.5 rounded-full text-[11px] font-bold text-zinc-300">🇿🇦 100% Verified Secunda Providers</span>
+        </div>
+
+        <div className="flex gap-2 mt-6 overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 md:mx-0 md:px-0">
           {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setFilter(cat)}
-              className={`px-4 py-2 rounded-full text-[13px] font-bold whitespace-nowrap border transition ${
-                filter === cat? "bg-white text-black border-white" : "bg-[#1A1A1A] text-zinc-400 border-[#2A2A2A] hover:text-white hover:border-zinc-600"
-              }`}
-            >
-              {cat}
-            </button>
+            <button key={cat.id} onClick={() => setFilter(cat.id)} className={`px-4 py-2.5 rounded-full text-[13px] font-black whitespace-nowrap border transition-all ${filter === cat.id? "bg-white text-black border-white" : "bg-[#1A1A1A] text-zinc-400 border-[#2A2A2A] hover:text-white"}`}>{cat.label}</button>
           ))}
         </div>
       </div>
 
-      {/* GRID */}
       <div className="max-w-6xl mx-auto px-6 pb-10 relative z-10">
-        {loading? (
-          <p className="text-zinc-500 text-sm">Loading hustlers...</p>
-        ) : (
+        {loading? <p className="text-zinc-500 text-sm animate-pulse">Loading hustlers...</p> : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((b) => (
-              <BusinessCard key={b.id} business={b} />
-            ))}
+            {filtered.map((b) => <BusinessCard key={b.id} business={b} />)}
           </div>
         )}
-        {!loading && filtered.length === 0 && <p className="text-zinc-500 mt-8 text-sm text-center">No businesses found for "{search || filter}"</p>}
       </div>
-
-      <footer className="mt-16 bg-[#0a0a0a] border-t border-[#1A1A1A] py-8 relative z-10">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-center md:text-left">
-            <p className="text-white font-bold text-sm">HustleHub Secunda 🎃</p>
-            <p className="text-zinc-500 text-xs mt-1">Secunda • Evander • Trichardt</p>
-          </div>
-          <div className="flex gap-6 text-xs">
-            <a href="/terms" className="text-zinc-400 hover:text-white transition underline">Terms & Conditions</a>
-            <a href="/privacy" className="text-zinc-400 hover:text-white transition underline">Privacy Policy (POPIA)</a>
-            <a href="mailto:support@hustlehubsecunda.co.za" className="text-zinc-400 hover:text-white transition">Support</a>
-          </div>
-        </div>
-        <div className="max-w-6xl mx-auto px-6 mt-6 text-center">
-          <p className="text-[10px] text-zinc-600">© 2026 HustleHub Secunda. All bookings processed via WhatsApp. Secured by Supabase.</p>
-        </div>
-      </footer>
     </main>
   );
 }

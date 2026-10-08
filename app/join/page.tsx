@@ -1,66 +1,94 @@
 "use client";
 import { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function JoinPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
 
-  async function handleSubmit(e: any) {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
     const form = new FormData(e.target);
 
-    const { error } = await supabase.from("businesses").insert({
-      slug: String(form.get("name")).toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-      name: form.get("name"),
-      owner_name: form.get("owner"),
+    const name = form.get("name") as string;
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Math.floor(Math.random() * 1000);
+    
+    const payload = {
+      name,
+      slug,
       category: form.get("category"),
-      base_price: Number(form.get("price")),
+      location: form.get("location") || "Secunda",
       whatsapp: form.get("whatsapp"),
-    });
+      phone: form.get("whatsapp"),
+      price: Number(form.get("price")) || 0,
+      base_price: Number(form.get("price")) || 0,
+      pricing_type: form.get("pricing_type") || "fixed",
+      owner_name: form.get("owner_name"),
+      business_password: form.get("business_password"),
+      verified: false,
+    };
 
-    setLoading(false);
-    if (!error) {
-      setDone(true);
+    const { error } = await supabase.from("businesses").insert(payload);
+    
+    if (error) {
+      alert("Error: " + error.message);
+      setLoading(false);
     } else {
-      alert("Error: " + error.message + "\n\nGo Supabase > Table > businesses > Turn OFF RLS or add policy: Allow INSERT for anon");
-      console.log(error);
+      alert(`Success! Your business is live.\n\nSAVE THIS:\nSlug: ${slug}\nPassword: ${form.get("business_password")}\n\nUse it to login at /manager`);
+      router.push("/");
     }
-  }
-
-  if (done) return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6 text-center">
-      <div>
-        <h1 className="text-4xl font-black">🔥 Sent!</h1>
-        <p className="mt-4 text-zinc-400">We got your application. Check WhatsApp in 24h.</p>
-        <a href="/" className="mt-6 inline-block bg-white text-black px-6 py-3 rounded-full font-bold">Back Home</a>
-      </div>
-    </div>
-  );
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 max-w-md mx-auto">
-      <a href="/" className="text-zinc-500">← Back</a>
-      <h1 className="text-3xl font-bold mt-6">List Your Hustle</h1>
-      <p className="text-zinc-400 mt-2">Secunda — get bookings via WhatsApp.</p>
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
-        <input name="name" required placeholder="Business Name" className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 outline-none" />
-        <input name="owner" required placeholder="Your Name" className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 outline-none" />
-        <select name="category" className="bg-zinc-900 p-4 rounded-xl border border-zinc-800">
-          <option>Barber</option><option>Braids</option><option>Nails</option><option>Pet Grooming</option><option>Car Wash</option><option>Other</option>
-        </select>
-        <input name="whatsapp" required placeholder="WhatsApp 2782..." className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 outline-none" />
-        <input name="price" type="number" required placeholder="Starting Price (120)" className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 outline-none" />
-        <button disabled={loading} className="bg-white text-black p-4 rounded-full font-bold mt-2">
-          {loading? "Sending..." : "Submit →"}
-        </button>
-      </form>
-    </div>
+    <main className="min-h-screen bg-black text-white p-6">
+      <div className="max-w-md mx-auto">
+        <Link href="/" className="text-zinc-500 text-xs underline">← Back</Link>
+        <h1 className="font-black text-[28px] mt-4 leading-none">Add Your Hustle 🚀</h1>
+        <p className="text-zinc-500 text-sm mt-2">Get booked in Secunda. Set a password so other owners can't see you.</p>
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-3">
+          <input name="name" required placeholder="Business Name (e.g. Fade Masters)" className="w-full bg-[#111] border border-[#222] rounded-full px-5 py-3.5 text-sm" />
+          
+          <div className="grid grid-cols-2 gap-3">
+            <select name="category" required className="w-full bg-[#111] border border-[#222] rounded-full px-5 py-3.5 text-sm">
+              <option value="">Category</option>
+              <option value="Barber">💈 Barber</option>
+              <option value="Hair & Beauty">💇‍♀️ Hair & Beauty</option>
+              <option value="Nails">💅 Nails</option>
+              <option value="Auto Care">🚗 Auto Care</option>
+              <option value="Towing">🚛 Towing</option>
+              <option value="Pet Care">🐶 Pet Care</option>
+              <option value="Handyman">🔧 Handyman</option>
+              <option value="Custom Cakes">🍰 Custom Cakes</option>
+              <option value="Massage">💆 Massage</option>
+            </select>
+            <select name="pricing_type" required className="w-full bg-[#111] border border-[#222] rounded-full px-5 py-3.5 text-sm">
+              <option value="fixed">Fixed Price</option>
+              <option value="variable">From Price (Estimate)</option>
+              <option value="custom">Custom Quote</option>
+            </select>
+          </div>
+
+          <input name="owner_name" required placeholder="Your Name" className="w-full bg-[#111] border border-[#222] rounded-full px-5 py-3.5 text-sm" />
+          <input name="whatsapp" required placeholder="WhatsApp Number (e.g. 27712345678)" className="w-full bg-[#111] border border-[#222] rounded-full px-5 py-3.5 text-sm" />
+          <input name="price" type="number" placeholder="Starting Price (e.g. 150) - leave 0 for Custom Quote" className="w-full bg-[#111] border border-[#222] rounded-full px-5 py-3.5 text-sm" />
+          <input name="location" placeholder="Location (default Secunda)" className="w-full bg-[#111] border border-[#222] rounded-full px-5 py-3.5 text-sm" />
+
+          {/* PASSWORD - NEW */}
+          <div className="pt-2">
+            <label className="text-[11px] font-bold text-zinc-400 ml-2">🔒 SET BUSINESS PASSWORD</label>
+            <input name="business_password" type="password" required placeholder="Password to access your Manager" className="w-full bg-[#1A1A1A] border border-amber-500/20 rounded-full px-5 py-3.5 text-sm mt-1 focus:border-amber-500/50 focus:outline-none" />
+            <p className="text-[11px] text-zinc-500 ml-2 mt-1">You will use this + your slug to login at /manager</p>
+          </div>
+
+          <button disabled={loading} className="w-full bg-white text-black font-black py-4 rounded-full text-sm mt-4">
+            {loading? "Creating..." : "Create My Hustle →"}
+          </button>
+        </form>
+      </div>
+    </main>
   );
 }
