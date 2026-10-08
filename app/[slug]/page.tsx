@@ -13,8 +13,19 @@ export default function BusinessPage() {
   const [business, setBusiness] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [selectedService, setSelectedService] = useState<any>(null);
+  const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [phone, setPhone] = useState("");
+
+  // Generate next 7 days
+  const dates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const label = i === 0? "Today" : i === 1? "Tomorrow" : d.toLocaleDateString("en-ZA", { weekday: "short" });
+    const dateStr = d.toLocaleDateString("en-ZA", { day: "2-digit", month: "short" });
+    const full = d.toISOString().split("T")[0];
+    return { label, dateStr, full, iso: d };
+  });
 
   useEffect(() => {
     if (!slug) return;
@@ -31,22 +42,23 @@ export default function BusinessPage() {
 
   function handleWhatsAppBook() {
     if (!selectedService) { alert("Select a service"); return; }
+    if (!selectedDate) { alert("Select a date"); return; }
     if (!selectedTime) { alert("Select a time"); return; }
 
     const waRaw = business?.whatsapp_number || business?.whatsapp || business?.phone || "";
-
-    if (!waRaw) {
-      alert(`WhatsApp missing for ${business?.name}`);
-      return;
-    }
+    if (!waRaw) { alert("WhatsApp missing"); return; }
 
     const cleanWa = waRaw.toString().replace(/\D/g,"");
+    const dateObj = dates.find(d => d.full === selectedDate);
+    const dateLabel = dateObj? `${dateObj.label} (${dateObj.dateStr})` : selectedDate;
+
     const msg = `Hi ${business.name}! 👋
 
 I want to book:
-- Service: ${selectedService.name} - R${selectedService.price}
-- Time: ${selectedTime} today
-- My number: ${phone || "I'll call"}
+• Service: ${selectedService.name} - R${selectedService.price}
+• Date: ${dateLabel}
+• Time: ${selectedTime}
+• My number: ${phone || "I'll call"}
 
 Found you on HustleHub Secunda`;
 
@@ -63,11 +75,12 @@ Found you on HustleHub Secunda`;
         <h1 className="text-3xl font-black mt-4">{business.name}</h1>
         <p className="text-zinc-500">{business.category}</p>
 
+        {/* 1. SERVICE */}
         <div className="mt-8">
           <h2 className="font-bold text-sm tracking-widest text-zinc-400">1. CHOOSE SERVICE</h2>
           <div className="mt-3 space-y-3">
             {services.map((s)=>(
-              <div key={s.id} onClick={()=>setSelectedService(s)} className={`border p-4 rounded-2xl flex justify-between items-center cursor-pointer transition-all ${selectedService?.id===s.id? "bg-white text-black border-white" : "bg-zinc-900 border-zinc-800"}`}>
+              <div key={s.id} onClick={()=>{setSelectedService(s); setSelectedDate(""); setSelectedTime("");}} className={`border p-4 rounded-2xl flex justify-between items-center cursor-pointer ${selectedService?.id===s.id? "bg-white text-black border-white" : "bg-zinc-900 border-zinc-800"}`}>
                 <div><p className="font-semibold">{s.name}</p><p className={`text-sm ${selectedService?.id===s.id? "text-zinc-600" : "text-zinc-500"}`}>R{s.price}</p></div>
                 <div className={`w-6 h-6 rounded-full border flex items-center justify-center ${selectedService?.id===s.id? "bg-black border-black text-white" : "border-zinc-700"}`}>{selectedService?.id===s.id && "✓"}</div>
               </div>
@@ -75,9 +88,24 @@ Found you on HustleHub Secunda`;
           </div>
         </div>
 
+        {/* 2. DATE */}
         {selectedService && (
           <div className="mt-8">
-            <h2 className="font-bold text-sm tracking-widest text-zinc-400">2. CHOOSE TIME</h2>
+            <h2 className="font-bold text-sm tracking-widest text-zinc-400">2. CHOOSE DATE</h2>
+            <div className="mt-3 grid grid-cols-3 md:grid-cols-4 gap-2">
+              {dates.map((d)=>(
+                <button key={d.full} onClick={()=>setSelectedDate(d.full)} className={`py-3 rounded-2xl text-sm font-bold border flex flex-col items-center ${selectedDate===d.full? "bg-white text-black border-white" : "bg-zinc-900 border-zinc-800 text-zinc-300"}`}>
+                  <span>{d.label}</span><span className="text-[11px] opacity-70">{d.dateStr}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 3. TIME */}
+        {selectedService && selectedDate && (
+          <div className="mt-8">
+            <h2 className="font-bold text-sm tracking-widest text-zinc-400">3. CHOOSE TIME</h2>
             <div className="mt-3 grid grid-cols-3 gap-2">
               {TIME_SLOTS.map((t)=>(
                 <button key={t} onClick={()=>setSelectedTime(t)} className={`py-3 rounded-full text-sm font-bold border ${selectedTime===t? "bg-white text-black border-white" : "bg-zinc-900 border-zinc-800 text-zinc-300"}`}>
@@ -88,14 +116,14 @@ Found you on HustleHub Secunda`;
           </div>
         )}
 
-        {selectedService && selectedTime && (
+        {/* 4. BOOK */}
+        {selectedService && selectedDate && selectedTime && (
           <div className="mt-8">
-            <h2 className="font-bold text-sm tracking-widest text-zinc-400">3. BOOK ON WHATSAPP</h2>
-            <input value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder="Your WhatsApp number (optional)" className="border border-zinc-800 bg-zinc-900 p-4 w-full mt-3 rounded-2xl text-white" />
+            <h2 className="font-bold text-sm tracking-widest text-zinc-400">4. BOOK ON WHATSAPP</h2>
+            <input value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder="Your WhatsApp (optional)" className="border border-zinc-800 bg-zinc-900 p-4 w-full mt-3 rounded-2xl text-white" />
             <button onClick={handleWhatsAppBook} className="mt-4 w-full bg-[#25D366] text-black py-4 rounded-full font-black text-[15px]">
-              Book {selectedService.name} at {selectedTime} on WhatsApp →
+              Book {selectedService.name} on {dates.find(d=>d.full===selectedDate)?.label} at {selectedTime} →
             </button>
-            <p className="text-[11px] text-zinc-500 mt-3 text-center">Opens WhatsApp to {business.whatsapp_number}</p>
           </div>
         )}
       </div>
