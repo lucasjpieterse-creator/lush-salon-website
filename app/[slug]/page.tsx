@@ -2,122 +2,115 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
 
-const TIME_SLOTS = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"];
-
-export default function BusinessPage() {
+export default function BookingPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const rawSlug = params.slug as string | string[];
+  const slug = Array.isArray(rawSlug)? rawSlug[0] : rawSlug;
+
   const [business, setBusiness] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [selectedService, setSelectedService] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [success, setSuccess] = useState(false);
 
-  const dates = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() + i);
-    const label = i === 0? "Today" : i === 1? "Tomorrow" : d.toLocaleDateString("en-ZA", { weekday: "short" });
-    const dateStr = d.toLocaleDateString("en-ZA", { day: "2-digit", month: "short" });
-    const full = d.toISOString().split("T")[0];
-    return { label, dateStr, full };
+  const [formData, setFormData] = useState({
+    client_name: "",
+    client_phone: "",
+    booking_date: "",
+    booking_time: "",
   });
 
   useEffect(() => {
     if (!slug) return;
-    (async()=>{
+    (async () => {
       const { data: biz } = await supabase.from("businesses").select("*").eq("slug", slug).single();
-      if (biz) {
-        setBusiness(biz);
-        const { data: servs } = await supabase.from("services").select("*").eq("business_id", biz.id);
-        setServices(servs || []);
-      }
+      if (!biz) { setLoading(false); return; }
+      setBusiness(biz);
+      const { data: servs } = await supabase.from("services").select("*").eq("business_id", biz.id);
+      setServices(servs || []);
+      if (servs && servs[0]) setSelectedService(servs[0]);
+      setLoading(false);
     })();
   }, [slug]);
 
-  async function handleWhatsAppBook() {
-    if (!selectedService ||!selectedDate ||!selectedTime) return alert("Select service, date and time");
-    if (!name ||!phone) return alert("Please enter your name and WhatsApp number");
-    const waRaw = business?.whatsapp_number || business?.whatsapp || business?.phone || "";
-    if (!waRaw) return alert("Business WhatsApp missing");
-    setLoading(true);
+  const handleBooking = async (e: any) => {
+    e.preventDefault();
+    if (!selectedService) return alert("Select a service");
+    if (!formData.client_name ||!formData.client_phone ||!formData.booking_date ||!formData.booking_time) {
+      return alert("Fill all fields");
+    }
 
-    const { data: booking, error } = await supabase.from("bookings").insert({
+    const payload = {
       business_id: business.id,
       service_name: selectedService.name,
       service_price: selectedService.price,
-      booking_date: selectedDate,
-      booking_time: selectedTime,
-      client_phone: phone,
-      client_name: name,
-      status: "pending"
-    }).select().single();
+      client_name: formData.client_name,
+      client_phone: formData.client_phone,
+      booking_date: formData.booking_date,
+      booking_time: formData.booking_time,
+      status: "pending",
+    };
 
-    if (error) {
-      setLoading(false);
-      alert(error.message);
-      console.error(error);
-      return;
+    const { error } = await supabase.from("bookings").insert(payload);
+    if (error) return alert("Booking failed: " + error.message);
+
+    // --- AUTOMATIC WHATSAPP TO OWNER ---
+    const ownerRaw = (business.owner_phone || business.phone || business.whatsapp || "").toString();
+    let ownerPhone = ownerRaw.replace(/\D/g, "");
+    if (ownerPhone.startsWith("0")) ownerPhone = "27" + ownerPhone.slice(1);
+
+    if (ownerPhone) {
+      const ownerMsg = `🔔 NEW BOOKING - ${business.name}\n\n👤 Client: ${formData.client_name}\n📱 ${formData.client_phone}\n💅 Service: ${selectedService.name} - R${selectedService.price}\n📅 Date: ${formData.booking_date} at ${formData.booking_time}\n\nManage here: https://hustlehub-secunda.co.za/manager/${business.slug}`;
+      window.open(`https://api.whatsapp.com/send?phone=${ownerPhone}&text=${encodeURIComponent(ownerMsg)}`, "_blank");
     }
 
-    const cleanWa = waRaw.toString().replace(/\D/g,"");
-    const dateObj = dates.find(d => d.full === selectedDate);
-    const msg = `Hi ${business.name}! 👋 New booking #${booking.id.slice(0,6)}
+    setSuccess(true);
+  };
 
-Service: ${selectedService.name} - R${selectedService.price}
-Date: ${dateObj?.label} (${dateObj?.dateStr})
-Time: ${selectedTime}
-Client: ${name} - ${phone}
+  if (loading) return <div className="min-h-screen bg-black text-white p-10">Loading {slug}...</div>;
+  if (!business) return <div className="min-h-screen bg-black text-white p-10">Business not found: {slug}</div>;
 
-Please confirm in Manager Dashboard.`;
-
-    window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`, "_blank");
-    setLoading(false);
-    alert("Booked! Business will confirm on WhatsApp.");
-    setSelectedDate("");
-    setSelectedTime("");
-    setName("");
-    setPhone("");
+  if (success) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[24px] p-8 max-w-md w-full">
+          <h1 className="text-3xl font-black">✅ Booked!</h1>
+          <p className="text-zinc-400 mt-3 text-sm">Your booking at {business.name} for {formData.booking_date} at {formData.booking_time} is pending confirmation. The owner was notified on WhatsApp.</p>
+          <p className="text-white font-bold mt-4">{selectedService?.name} - R{selectedService?.price}</p>
+          <button onClick={()=>setSuccess(false)} className="mt-6 bg-white text-black w-full py-3 rounded-full font-bold text-sm">Book Another</button>
+        </div>
+      </div>
+    );
   }
 
-  if (!business) return <div className="p-10 text-white bg-black min-h-screen">Loading...</div>;
-
   return (
-    <div className="min-h-screen bg-black text-white p-6">
-      <div className="max-w-2xl mx-auto">
-        <Link href="/" className="text-zinc-500 text-sm hover:text-white">← Back to HustleHub</Link>
-        <h1 className="text-3xl font-black mt-4">{business.name}</h1>
-        <p className="text-zinc-500">{business.category} • {business.location || "Secunda"}</p>
+    <div className="min-h-screen bg-black text-white p-6 max-w-lg mx-auto">
+      <div className="mt-6 bg-[#1A1A1A] border border-[#2A2A2A] rounded-[24px] p-6">
+        <h1 className="text-3xl font-black">{business.name}</h1>
+        <p className="text-zinc-500 text-sm mt-1">{business.category} • Secunda</p>
 
-        <div className="mt-8">
-          <h2 className="font-bold text-[11px] tracking-[0.2em] text-zinc-500">1. CHOOSE SERVICE</h2>
-          <div className="mt-3 space-y-3">
-            {services.map((s)=>(<div key={s.id} onClick={()=>{setSelectedService(s); setSelectedDate(""); setSelectedTime("");}} className={`border p-4 rounded-[20px] flex justify-between items-center cursor-pointer transition ${selectedService?.id===s.id? "bg-white text-black border-white" : "bg-[#1A1A1A] border-[#2A2A2A] hover:border-zinc-600"}`}><div><p className="font-bold">{s.name}</p><p className={`text-sm ${selectedService?.id===s.id? "text-zinc-600":"text-zinc-500"}`}>R{s.price}</p></div><div className={`w-6 h-6 rounded-full border flex items-center justify-center ${selectedService?.id===s.id? "bg-black border-black text-white":"border-[#2A2A2A]"}`}>{selectedService?.id===s.id && "✓"}</div></div>))}
-            {services.length===0 && <p className="text-zinc-600 text-sm">No services added yet.</p>}
+        <div className="mt-6">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Select Service</p>
+          <div className="mt-3 grid gap-2">
+            {services.map(s => (
+              <button key={s.id} onClick={()=>setSelectedService(s)} className={`text-left p-4 rounded-[14px] border text-sm font-bold flex justify-between ${selectedService?.id===s.id? "bg-white text-black border-white" : "bg-[#0F0F0F] border-[#2A2A2A] text-white"}`}>
+                <span>{s.name}</span><span>R{s.price}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {selectedService && (
-          <div className="mt-8"><h2 className="font-bold text-[11px] tracking-[0.2em] text-zinc-500">2. CHOOSE DATE</h2>
-          <div className="mt-3 grid grid-cols-3 md:grid-cols-4 gap-2">{dates.map((d)=>(<button key={d.full} onClick={()=>setSelectedDate(d.full)} className={`py-3 rounded-[16px] text-sm font-bold border flex flex-col items-center transition ${selectedDate===d.full? "bg-white text-black border-white" : "bg-[#1A1A1A] border-[#2A2A2A] text-zinc-300 hover:border-zinc-600"}`}><span>{d.label}</span><span className="text-[11px] opacity-60">{d.dateStr}</span></button>))}</div></div>
-        )}
-
-        {selectedService && selectedDate && (
-          <div className="mt-8"><h2 className="font-bold text-[11px] tracking-[0.2em] text-zinc-500">3. CHOOSE TIME</h2>
-          <div className="mt-3 grid grid-cols-3 gap-2">{TIME_SLOTS.map((t)=>(<button key={t} onClick={()=>setSelectedTime(t)} className={`py-3 rounded-full text-sm font-bold border transition ${selectedTime===t? "bg-white text-black border-white" : "bg-[#1A1A1A] border-[#2A2A2A] text-zinc-300 hover:border-zinc-600"}`}>{t}</button>))}</div></div>
-        )}
-
-        {selectedService && selectedDate && selectedTime && (
-          <div className="mt-8">
-            <h2 className="font-bold text-[11px] tracking-[0.2em] text-zinc-500">4. YOUR DETAILS</h2>
-            <input value={name} onChange={(e)=>setName(e.target.value)} placeholder="Your Name" className="border border-[#2A2A2A] bg-[#1A1A1A] p-4 w-full mt-3 rounded-[16px] text-white placeholder-zinc-500 focus:border-zinc-500 outline-none" />
-            <input value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder="Your WhatsApp number (e.g. 082...)" className="border border-[#2A2A2A] bg-[#1A1A1A] p-4 w-full mt-3 rounded-[16px] text-white placeholder-zinc-500 focus:border-zinc-500 outline-none" />
-            <button disabled={loading} onClick={handleWhatsAppBook} className="mt-4 w-full bg-[#25D366] hover:bg-[#20bd5a] text-black py-4 rounded-full font-black transition">{loading? "Saving..." : `Book ${selectedService.name} →`}</button>
+        <form onSubmit={handleBooking} className="mt-6 space-y-3">
+          <input placeholder="Your Name" value={formData.client_name} onChange={e=>setFormData({...formData, client_name: e.target.value})} className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white" />
+          <input placeholder="WhatsApp Number e.g 0721234567" value={formData.client_phone} onChange={e=>setFormData({...formData, client_phone: e.target.value})} className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white" />
+          <div className="grid grid-cols-2 gap-2">
+            <input type="date" value={formData.booking_date} onChange={e=>setFormData({...formData, booking_date: e.target.value})} className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white focus:outline-none focus:border-white" />
+            <input type="time" value={formData.booking_time} onChange={e=>setFormData({...formData, booking_time: e.target.value})} className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white focus:outline-none focus:border-white" />
           </div>
-        )}
+          <button type="submit" className="w-full bg-white text-black py-4 rounded-full font-black text-sm mt-2">Confirm Booking - R{selectedService?.price||""}</button>
+          <p className="text-[11px] text-zinc-600 text-center mt-2">You will be redirected to WhatsApp to notify the owner automatically</p>
+        </form>
       </div>
     </div>
   );
