@@ -24,7 +24,15 @@ export default function HomePage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("businesses").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("businesses").select("*").order("created_at", { ascending: false });
+
+      // DEBUG - CHECK IF SPECIALS IS COMING FROM DB
+      console.log("RAW DATA FROM SUPABASE:", data);
+      console.log("FIRST BUSINESS:", data?.[0]);
+      console.log("FIRST BUSINESS is_special:", data?.[0]?.is_special);
+      console.log("ALL SPECIALS:", data?.filter((b:any)=> b.is_special));
+      if (error) console.error("SUPABASE ERROR:", error);
+
       setBusinesses(data || []);
       setLoading(false);
     })();
