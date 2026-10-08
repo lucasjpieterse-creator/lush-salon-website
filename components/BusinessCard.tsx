@@ -7,34 +7,49 @@ export default function BusinessCard({ business }: { business: any }) {
   const href = `/${business.slug || business.id}`;
 
   return (
-    <Link href={href}>
+    <Link href={href} className="block">
       <div
         className={`
           relative rounded-[20px] p-4 bg-[#121212] border cursor-pointer
-          transition-all duration-300 hover:scale-[1.02] overflow-hidden
+          transition-all duration-300 hover:scale-[1.02] group
           ${isSpecial
-          ? "border-[#FF4D00] bg-[#1A1008] shadow-[0_0_25px_rgba(255,77,0,0.7),0_0_60px_rgba(255,77,0,0.3)] ring-2 ring-orange-500"
+         ? "border-[#FF4D00] bg-[#1A1008] shadow-[0_0_20px_rgba(255,77,0,0.5)]"
             : "border-white/10 hover:border-white/20"
           }
         `}
-        style={isSpecial? { borderColor: "#FF4D00" } : {}}
       >
+        {/* BADGE - NOW FITS INSIDE */}
         {isSpecial && (
-          <div className="absolute -top-2 -right-2 bg-[#FF4D00] text-black text-[11px] font-black px-3 py-1 rounded-full z-20 animate-pulse shadow-[0_0_15px_rgba(255,77,0,0.8)]">
+          <div className="absolute top-0 right-0 bg-[#FF4D00] text-black text-[10px] font-black px-3 py-1 rounded-tr-[20px] rounded-bl-[12px] z-20 tracking-wide">
             🔥 SPECIAL LIVE
           </div>
         )}
 
-        <div className="relative z-10">
-          <div className="flex justify-between items-start gap-2">
-            <h3 className={`font-bold text-[16px] leading-tight ${isSpecial? "text-orange-100" : "text-white"}`}>{business.name}</h3>
-            {isVerified && <span className="bg-green-500/20 text-green-300 border border-green-500/30 text-[9px] font-bold px-2 py-1 rounded-full shrink-0">✓ VERIFIED</span>}
+        <div className="pt-1">
+          <div className="flex justify-between items-start gap-3 pr-[110px]">
+            <h3 className={`font-bold text-[16px] leading-tight ${isSpecial? "text-white" : "text-white"}`}>
+              {business.name}
+            </h3>
           </div>
-          <p className="text-[12px] text-zinc-500 mt-1">{business.category} • {business.area}</p>
-          {isSpecial && <p className="text-[12px] text-[#FF8A4D] mt-2 font-black animate-pulse">⚡ SPECIAL OFFER LIVE!</p>}
-          <div className="flex justify-between items-center mt-3">
-            <p className="text-[10px] text-zinc-600">{business.views || 0} visits</p>
-            <p className="text-[10px] text-zinc-400 group-hover:text-white">Book →</p>
+
+          {isVerified && (
+            <div className="mt-2">
+              <span className="inline-flex bg-[#1E3A2A] text-[#6EE7A0] border border-[#2A5A3A] text-[9px] font-bold px-2.5 py-1 rounded-full tracking-wide">
+                ✓ VERIFIED
+              </span>
+            </div>
+          )}
+
+          <p className="text-[12px] text-zinc-500 mt-2">{business.category} • {business.area}</p>
+
+          {isSpecial && (
+            <p className="text-[11px] text-[#FF8A4D] mt-3 font-black tracking-wide flex items-center gap-1">
+              ⚡ SPECIAL OFFER LIVE!
+            </p>
+          )}
+
+          <div className="flex justify-end items-center mt-4">
+            <p className="text-[12px] text-zinc-500 group-hover:text-white transition-colors">Book →</p>
           </div>
         </div>
       </div>
