@@ -7,12 +7,10 @@ export default function ClientLayoutWrapper({ children }: { children: React.Reac
   const pathname = usePathname();
   const isCEO = pathname?.startsWith("/ceo");
 
-  // CEO = pure cyberpunk, no seasons, no header/footer
   if (isCEO) {
     return <>{children}</>;
   }
 
-  // MAIN SITE = with seasons + header/footer + POPIA
   return (
     <>
       <HalloweenFloaties />
@@ -54,7 +52,6 @@ export default function ClientLayoutWrapper({ children }: { children: React.Reac
               <p className="text-white font-bold text-[13px]">Legal • POPIA Compliant 🇿🇦</p>
               <a href="/privacy" className="block hover:text-white">Privacy Policy & POPIA Notice</a>
               <a href="/terms" className="block hover:text-white">Terms of Service</a>
-              <a href="/popia" className="block hover:text-white">POPIA Data Request</a>
               <p className="text-[10px] text-zinc-600 mt-3 max-w-[280px] leading-relaxed">
                 In compliance with the Protection of Personal Information Act (POPIA). We do not sell your data. Contact info@hustlehub-secunda.co.za for data removal.
               </p>
