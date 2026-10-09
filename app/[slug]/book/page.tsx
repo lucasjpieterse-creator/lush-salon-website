@@ -49,6 +49,19 @@ export default function BookPage(){
     fetchTaken()
   },[selectedDate, business])
 
+  // Helper function to invoke server-side WhatsApp dispatch
+  const sendAutomatedWhatsApp = async (recipientPhone: string, messageText: string) => {
+    try {
+      await fetch('/api/send-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: recipientPhone, message: messageText })
+      })
+    } catch (err) {
+      console.error('WhatsApp dispatch failed:', err)
+    }
+  }
+
   const handleBooking = async () => {
     if(!selectedService ||!selectedDate ||!selectedTime ||!name ||!phone){ alert("Fill all"); return; }
     if(takenTimes.includes(selectedTime)){ alert("Slot taken"); return; }
@@ -79,11 +92,12 @@ export default function BookPage(){
             })
             setLoading(false)
             if(error){ alert(error.message); return; }
-            const raw = (business.whatsapp_number||'').replace(/[^0-9]/g,'')
-            const wa = raw.startsWith('0')? '27'+raw.slice(1) : raw
-            const msg = `🔥 *PAID BOOKING - ${business.name}* ✅\n💈 ${selectedService.name} R${selectedService.price}\n📅 ${selectedDate} ${selectedTime}\n👤 ${name} ${phone}\n💰 R${deposit} PAID Ref:${response.reference}`
-            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`,'_blank')
-            alert(`Paid R${deposit}! Secured.`)
+            
+            // Automatically send WhatsApp notification to the client's phone
+            const clientMsg = `🔥 Booking Confirmed - ${business.name}!\n\nService: ${selectedService.name} (R${selectedService.price})\nDate & Time: ${selectedDate} at ${selectedTime}\nDeposit Paid: R${deposit} (Ref: ${response.reference})\n\nThank you, ${name}! We look forward to seeing you.`
+            await sendAutomatedWhatsApp(phone, clientMsg)
+
+            alert(`Paid R${deposit}! Your booking is secured. Confirmation sent to your WhatsApp.`)
             window.location.href = `/${slug}`
           })()
         },
@@ -102,7 +116,12 @@ export default function BookPage(){
       })
       setLoading(false)
       if(error){ alert(error.message); return; }
-      alert("Booked - owner will confirm")
+
+      // Automatically send WhatsApp pending notification to the client's phone
+      const clientMsg = `🗓️ Booking Request Received - ${business.name}\n\nService: ${selectedService.name}\nDate & Time: ${selectedDate} at ${selectedTime}\nStatus: Pending Confirmation\n\nHi ${name}, the owner will confirm your appointment shortly!`
+      await sendAutomatedWhatsApp(phone, clientMsg)
+
+      alert("Booking request submitted! Confirmation details sent to your WhatsApp.")
       window.location.href = `/${slug}`
     }
   }
