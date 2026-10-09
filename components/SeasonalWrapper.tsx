@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import SeasonalEffects from "@/components/SeasonalEffects";
-import Footer from "@/components/Footer"; // Ensure path matches your existing Footer location
+import Footer from "./Footer"; // Ensure path matches your existing Footer location
 
 export default function SeasonalWrapper({
   children,
