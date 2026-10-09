@@ -49,7 +49,6 @@ export default function BookPage(){
     fetchTaken()
   },[selectedDate, business])
 
-  // Helper function to send WhatsApp via automated API endpoint
   const sendAutomatedWhatsApp = async (recipientPhone: string, messageText: string) => {
     try {
       await fetch('/api/send-whatsapp', {
@@ -69,7 +68,6 @@ export default function BookPage(){
     const deposit = business.deposit_amount || 100
     const PAYSTACK_KEY = process.env.NEXT_PUBLIC_PAYSTACK_KEY || "pk_test_0f46006ac6b2d593ed5b5a16ceb72add963fef00"
 
-    // Safely parse target business WhatsApp number (strips spaces/newlines)
     const rawPhone = business.whatsapp_number || business.whatsapp || business.phone || ''
     const cleanRaw = rawPhone.trim().replace(/\D/g, '')
     const targetWhatsapp = cleanRaw.startsWith('0') ? '27' + cleanRaw.slice(1) : cleanRaw
@@ -98,11 +96,9 @@ export default function BookPage(){
             setLoading(false)
             if(error){ alert(error.message); return; }
             
-            // 1. Send confirmation WhatsApp to CLIENT
             const clientMsg = `🔥 Booking Confirmed - ${business.name}!\n\nService: ${selectedService.name} (R${selectedService.price})\nDate & Time: ${selectedDate} at ${selectedTime}\nDeposit Paid: R${deposit} (Ref: ${response.reference})\n\nThank you, ${name}! We look forward to seeing you.`
             await sendAutomatedWhatsApp(phone, clientMsg)
 
-            // 2. Send alert WhatsApp to BUSINESS OWNER
             if(targetWhatsapp) {
               const ownerMsg = `🚨 NEW PAID BOOKING!\n\nClient: ${name} (${phone})\nService: ${selectedService.name}\nSlot: ${selectedDate} at ${selectedTime}\nDeposit: R${deposit} Paid (Ref: ${response.reference})`
               await sendAutomatedWhatsApp(targetWhatsapp, ownerMsg)
@@ -128,11 +124,9 @@ export default function BookPage(){
       setLoading(false)
       if(error){ alert(error.message); return; }
 
-      // 1. Send pending confirmation WhatsApp to CLIENT
       const clientMsg = `🗓️ Booking Request Received - ${business.name}\n\nService: ${selectedService.name}\nDate & Time: ${selectedDate} at ${selectedTime}\nStatus: Pending Confirmation\n\nHi ${name}, the owner will confirm your appointment shortly!`
       await sendAutomatedWhatsApp(phone, clientMsg)
 
-      // 2. Send booking alert WhatsApp to BUSINESS OWNER
       if(targetWhatsapp) {
         const ownerMsg = `📌 NEW BOOKING REQUEST!\n\nClient: ${name} (${phone})\nService: ${selectedService.name}\nSlot: ${selectedDate} at ${selectedTime}\nStatus: Pending`
         await sendAutomatedWhatsApp(targetWhatsapp, ownerMsg)
