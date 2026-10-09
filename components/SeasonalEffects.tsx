@@ -23,10 +23,9 @@ export default function SeasonalEffects() {
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
       {season === "halloween" && (
         <>
-          {/* Top-Left Pumpkin with Tight Outer Glow */}
+          {/* Top-Left Pumpkin */}
           <div className="absolute top-4 left-4 z-50">
             <div className="relative inline-block animate-bounce">
-              {/* Radial backlight glow locked behind the pumpkin */}
               <div className="absolute inset-0 m-auto h-10 w-10 rounded-full bg-orange-500/80 blur-xl scale-150 animate-pulse" />
               <span className="relative text-5xl select-none drop-shadow-[0_0_20px_rgba(255,115,0,1)]">
                 🎃
@@ -34,10 +33,9 @@ export default function SeasonalEffects() {
             </div>
           </div>
 
-          {/* Top-Right Pumpkin with Tight Outer Glow */}
+          {/* Top-Right Pumpkin */}
           <div className="absolute top-4 right-4 z-50">
             <div className="relative inline-block animate-bounce">
-              {/* Radial backlight glow locked behind the pumpkin */}
               <div className="absolute inset-0 m-auto h-10 w-10 rounded-full bg-orange-500/80 blur-xl scale-150 animate-pulse" />
               <span className="relative text-5xl select-none drop-shadow-[0_0_20px_rgba(255,115,0,1)]">
                 🎃
@@ -45,15 +43,22 @@ export default function SeasonalEffects() {
             </div>
           </div>
 
-          {/* Bats Flying Across the Entire Screen */}
+          {/* Bats Flying Across Screen with Flapping Wings */}
           <div className="absolute top-12 left-0 w-full pointer-events-none overflow-hidden">
             <div className="flex space-x-16 animate-[fly_12s_linear_infinite] whitespace-nowrap">
-              <span className="text-3xl inline-block -rotate-12">🦇</span>
-              <span className="text-2xl inline-block rotate-6 translate-y-3">🦇</span>
-              <span className="text-4xl inline-block -rotate-45 -translate-y-2">🦇</span>
+              <span className="text-3xl inline-block animate-[flap_0.4s_ease-in-out_infinite_alternate]">
+                🦇
+              </span>
+              <span className="text-2xl inline-block translate-y-3 animate-[flap_0.35s_ease-in-out_infinite_alternate]">
+                🦇
+              </span>
+              <span className="text-4xl inline-block -translate-y-2 animate-[flap_0.45s_ease-in-out_infinite_alternate]">
+                🦇
+              </span>
             </div>
           </div>
 
+          {/* Keyframe Animations */}
           <style jsx global>{`
             @keyframes fly {
               0% {
@@ -61,6 +66,15 @@ export default function SeasonalEffects() {
               }
               100% {
                 transform: translateX(110vw);
+              }
+            }
+
+            @keyframes flap {
+              0% {
+                transform: scaleY(1) rotate(-8deg);
+              }
+              100% {
+                transform: scaleY(0.65) rotate(12deg);
               }
             }
           `}</style>
