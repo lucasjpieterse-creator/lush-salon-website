@@ -17,34 +17,38 @@ export default function JoinPage() {
     const category = form.get("category") as string;
     const whatsapp = form.get("whatsapp") as string;
     const business_password = form.get("business_password") as string;
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Math.floor(Math.random() * 1000);
-    
+    const slug =
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "") +
+      "-" +
+      Math.floor(Math.random() * 1000);
+
+    // Only send columns that exist in your Supabase 'businesses' schema
     const payload = {
       name,
       slug,
       category,
-      location: form.get("location") || "Secunda",
       whatsapp,
       phone: whatsapp,
       whatsapp_number: whatsapp,
       price: Number(form.get("price")) || 0,
-      base_price: Number(form.get("price")) || 0,
       pricing_type: form.get("pricing_type") || "fixed",
       owner_name: form.get("owner_name"),
       business_password: business_password,
-      manager_pin: business_password, // Set manager PIN to password
-      verified: false,
-      is_approved: false, // REQUIRES CEO LUCAS APPROVAL IN /ceo TO GO LIVE
+      manager_pin: business_password,
+      is_approved: false, // Requires CEO Lucas approval in /ceo to go live
     };
 
     const { error } = await supabase.from("businesses").insert(payload);
-    
+
     if (error) {
       alert("Error: " + error.message);
       setLoading(false);
     } else {
       // Dispatch Automated WhatsApp Alert to CEO Lucas
-      const ceoPhone = "27721234567"; // Replace with your phone number (e.g., 2772...)
+      const ceoPhone = "27721234567"; // Replace with your WhatsApp number
       const ceoAlertMsg = `🚨 NEW HUSTLE REGISTRATION - HustleHub Secunda\n\n🏢 Business: ${name}\n📂 Category: ${category}\n📱 WhatsApp: ${whatsapp}\n🔑 Slug: ${slug}\n\nReview & Approve Listing:\nhttps://hustlehubsecunda.co.za/ceo`;
 
       try {
@@ -58,7 +62,7 @@ export default function JoinPage() {
       }
 
       alert(
-        `✅ Registration Submitted!\n\nSAVE THIS:\nSlug: ${slug}\nPassword: ${business_password}\n\nYour application has been sent to CEO Lucas for approval. You will receive a WhatsApp notification as soon as your listing goes live on the directory!`
+        `✅ Registration Submitted!\n\nSAVE THIS:\nSlug: ${slug}\nPassword: ${business_password}\n\nYour application has been sent to CEO Lucas for approval. You will receive a WhatsApp notification as soon as your listing goes live!`
       );
       router.push("/");
     }
@@ -97,7 +101,6 @@ export default function JoinPage() {
           <input name="owner_name" required placeholder="Your Name" className="w-full bg-[#111] border border-[#222] rounded-full px-5 py-3.5 text-sm" />
           <input name="whatsapp" required placeholder="WhatsApp Number (e.g. 27712345678)" className="w-full bg-[#111] border border-[#222] rounded-full px-5 py-3.5 text-sm" />
           <input name="price" type="number" placeholder="Starting Price (e.g. 150) - leave 0 for Custom Quote" className="w-full bg-[#111] border border-[#222] rounded-full px-5 py-3.5 text-sm" />
-          <input name="location" placeholder="Location (default Secunda)" className="w-full bg-[#111] border border-[#222] rounded-full px-5 py-3.5 text-sm" />
 
           {/* PASSWORD */}
           <div className="pt-2">
