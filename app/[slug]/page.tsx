@@ -67,21 +67,49 @@ export default function BookingPage() {
     const isDepositRequired = Boolean(business.deposit_required);
     const depositAmount = Number(business.deposit_amount || 0);
 
-    // If deposit is required, we simulate/initiate Paystack checkout here
+    // --- REAL PAYSTACK INITIALIZATION FLOW ---
     if (isDepositRequired && depositAmount > 0) {
       setPaying(true);
-      // In production, you can integrate Paystack Inline or redirect to Paystack payment URL.
-      // For now, we simulate a secure Paystack redirect/popup payment confirmation:
-      const paystackConfirmed = confirm(
-        `Secure Paystack Checkout\n\nBusiness: ${business.name}\nDeposit Required: R${depositAmount}\n\nClick OK to simulate successful card payment via Paystack.`
-      );
-      
-      setPaying(false);
-      if (!paystackConfirmed) {
-        return alert("Payment cancelled. Booking was not completed.");
+      try {
+        const cleanPhone = formData.client_phone.replace(/\D/g, "");
+        const res = await fetch("/api/paystack/initialize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: `${cleanPhone || "client"}@hustlehubsecunda.co.za`,
+            amount: depositAmount,
+            metadata: {
+              slug: business.slug,
+              business_id: business.id,
+              client_name: formData.client_name,
+              client_phone: formData.client_phone,
+              service_name: selectedService.name,
+              service_price: selectedService.price,
+              booking_date: formData.booking_date,
+              booking_time: formData.booking_time,
+            },
+          }),
+        });
+
+        const data = await res.json();
+        setPaying(false);
+
+        if (data.authorization_url) {
+          // Redirect to Paystack's official checkout page
+          window.location.href = data.authorization_url;
+          return;
+        } else {
+          alert("Paystack error: " + (data.error || "Failed to initialize payment gateway."));
+          return;
+        }
+      } catch (err: any) {
+        setPaying(false);
+        alert("Payment process failed: " + err.message);
+        return;
       }
     }
 
+    // --- STANDARD FREE / NO-DEPOSIT BOOKING FALLBACK ---
     const payload = {
       business_id: business.id,
       service_name: selectedService.name,
@@ -90,7 +118,7 @@ export default function BookingPage() {
       client_phone: formData.client_phone,
       booking_date: formData.booking_date,
       booking_time: formData.booking_time,
-      status: isDepositRequired ? "confirmed" : "pending",
+      status: "pending",
     };
 
     const { error } = await supabase.from("bookings").insert(payload);
@@ -102,12 +130,12 @@ export default function BookingPage() {
     if (ownerPhone.startsWith("0")) ownerPhone = "27" + ownerPhone.slice(1);
 
     // 1. Send automated notification to CLIENT
-    const clientMsg = `🗓️ Booking Confirmed - ${business.name}\n\nService: ${selectedService.name} (R${selectedService.price})\nDate & Time: ${formData.booking_date} at ${formData.booking_time}\n${isDepositRequired ? `💳 Deposit Paid via Paystack: R${business.deposit_amount}` : "Status: Pending Confirmation"}\n\nThank you for booking on HustleHub Secunda!`;
+    const clientMsg = `🗓️ Booking Request Received - ${business.name}\n\nService: ${selectedService.name} (R${selectedService.price})\nDate & Time: ${formData.booking_date} at ${formData.booking_time}\nStatus: Pending Confirmation\n\nHi ${formData.client_name}, your booking request has been submitted! The owner will confirm shortly.`;
     await sendAutomatedWhatsApp(formData.client_phone, clientMsg);
 
     // 2. Send automated notification to OWNER
     if (ownerPhone) {
-      const ownerMsg = `🔔 NEW BOOKING & PAYMENT - ${business.name}\n\n👤 Client: ${formData.client_name}\n📱 ${formData.client_phone}\n💅 Service: ${selectedService.name} (R${selectedService.price})\n📅 Date: ${formData.booking_date} at ${formData.booking_time}\n${isDepositRequired ? `💳 Paystack Deposit Received: R${business.deposit_amount}` : ""}\n\nManage here: https://hustlehubsecunda.co.za/manager/${business.slug}`;
+      const ownerMsg = `🔔 NEW BOOKING - ${business.name}\n\n👤 Client: ${formData.client_name}\n📱 ${formData.client_phone}\n💅 Service: ${selectedService.name} (R${selectedService.price})\n📅 Date: ${formData.booking_date} at ${formData.booking_time}\n\nManage here: https://hustlehubsecunda.co.za/manager/${business.slug}`;
       await sendAutomatedWhatsApp(ownerPhone, ownerMsg);
     }
 
@@ -124,13 +152,12 @@ export default function BookingPage() {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center">
         <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[24px] p-8 max-w-md w-full">
-          <h1 className="text-3xl font-black text-emerald-400">✅ Booked & Paid!</h1>
+          <h1 className="text-3xl font-black text-emerald-400">✅ Booked!</h1>
           <p className="text-zinc-400 mt-3 text-sm">
-            Your booking at {business.name} for {formData.booking_date} at {formData.booking_time} is confirmed. Details have been sent to your WhatsApp.
+            Your booking at {business.name} for {formData.booking_date} at {formData.booking_time} is submitted. Details have been sent to your WhatsApp.
           </p>
           <p className="text-white font-bold mt-4">
             {selectedService?.name} — R{selectedService?.price}
-            {isDepositRequired && <span className="block text-emerald-400 text-xs mt-1">Paid Deposit via Paystack: R{depositAmount}</span>}
           </p>
           <button onClick={() => setSuccess(false)} className="mt-6 bg-white text-black w-full py-3 rounded-full font-bold text-sm">
             Book Another
@@ -208,7 +235,7 @@ export default function BookingPage() {
               ? "Connecting to Paystack..."
               : isDepositRequired && depositAmount > 0
               ? `Pay R${depositAmount} Deposit & Book`
-              : `Confirm Booking - R{selectedService?.price || ""}`}
+              : `Confirm Booking - R${selectedService?.price || ""}`}
           </button>
           
           <p className="text-[11px] text-zinc-600 text-center mt-2">
