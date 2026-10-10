@@ -28,9 +28,11 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchBusinesses = async () => {
+      // ONLY fetch businesses that are approved by CEO
       const { data, error } = await supabase
         .from("businesses")
         .select("*")
+        .eq("is_approved", true)
         .order("created_at", { ascending: false });
       
       if (!error && data) {
@@ -41,13 +43,12 @@ export default function HomePage() {
 
     fetchBusinesses();
 
-    // Auto-refresh when switching back to the tab
     const handleFocus = () => fetchBusinesses();
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
-  // --- DYNAMICALLY FILTER CATEGORIES BASED ON EXISTING BUSINESSES ---
+  // --- DYNAMICALLY FILTER CATEGORIES BASED ON APPROVED BUSINESSES ---
   const activeCategories = useMemo(() => {
     const activeIds = new Set<string>();
 
