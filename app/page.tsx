@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 import BusinessCard from "@/components/BusinessCard";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const categories = [
   { id: "All", label: "✨ All" },
@@ -23,15 +27,21 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const fetchBusinesses = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("businesses")
+      .select("*")
+      .order("created_at", { ascending: false });
+    
+    if (!error && data) {
+      setBusinesses(data);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("businesses")
-        .select("*")
-        .order("created_at", { ascending: false });
-      setBusinesses(data || []);
-      setLoading(false);
-    })();
+    fetchBusinesses();
   }, []);
 
   const filtered = businesses.filter((b) => {
@@ -48,10 +58,18 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-black text-white relative">
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-4">
-        <h1 className="text-[32px] md:text-[48px] font-black leading-[0.95] tracking-tight">
-          Find & Book <br />
-          <span className="text-zinc-500">Local Hustlers</span> 🎃
-        </h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-[32px] md:text-[48px] font-black leading-[0.95] tracking-tight">
+            Find & Book <br />
+            <span className="text-zinc-500">Local Hustlers</span> 🎃
+          </h1>
+          <button
+            onClick={fetchBusinesses}
+            className="bg-zinc-900 border border-zinc-800 text-cyan-400 text-xs px-3 py-2 rounded-xl hover:bg-zinc-800 transition-colors"
+          >
+            🔄 Refresh Live
+          </button>
+        </div>
         <div className="mt-6">
           <input
             value={search}
