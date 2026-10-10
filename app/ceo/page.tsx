@@ -1,32 +1,68 @@
-import { createClient } from "@supabase/supabase-js";
+"use client";
 
-// Force dynamic server rendering so you always see live real-time metrics
-export const revalidate = 0;
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export default function CeoDashboard() {
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busError, setBusError] = useState<any>(null);
+  const [bookError, setBookError] = useState<any>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-export default async function CeoDashboard() {
-  // 1. Fetch all businesses from Supabase
-  const { data: businesses, error: busError } = await supabase
-    .from("businesses")
-    .select("*")
-    .order("created_at", { ascending: false });
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
 
-  // 2. Fetch all bookings & status logs
-  const { data: bookings, error: bookError } = await supabase
-    .from("bookings")
-    .select("*")
-    .order("created_at", { ascending: false });
+      // Fetch businesses
+      const { data: busData, error: bErr } = await supabase
+        .from("businesses")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-  // Compute key summary totals
-  const totalBusinesses = businesses?.length || 0;
-  const totalBookings = bookings?.length || 0;
-  
-  // Track system status / errors
-  const failedBookings = bookings?.filter((b) => b.whatsapp_status === "failed") || [];
-  const pendingBookings = bookings?.filter((b) => b.status === "pending") || [];
+      if (bErr) setBusError(bErr);
+      else setBusinesses(busData || []);
+
+      // Fetch bookings
+      const { data: bookData, error: bkErr } = await supabase
+        .from("bookings")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (bkErr) setBookError(bkErr);
+      else setBookings(bookData || []);
+
+      setLoading(false);
+    }
+
+    fetchData();
+  }, []);
+
+  // Toggle Special / Promotion Active state
+  const toggleSpecial = async (bizId: string, currentStatus: boolean) => {
+    setUpdatingId(bizId);
+    const newStatus = !currentStatus;
+
+    const { error } = await supabase
+      .from("businesses")
+      .update({ is_special: newStatus })
+      .eq("id", bizId);
+
+    if (error) {
+      alert("Failed to update status: " + error.message);
+    } else {
+      setBusinesses((prev) =>
+        prev.map((b) => (b.id === bizId ? { ...b, is_special: newStatus } : b))
+      );
+    }
+    setUpdatingId(null);
+  };
+
+  const totalBusinesses = businesses.length;
+  const totalBookings = bookings.length;
+  const failedBookings = bookings.filter((b) => b.whatsapp_status === "failed");
+  const pendingBookings = bookings.filter((b) => b.status === "pending");
 
   return (
     <div className="min-h-screen bg-black text-cyan-400 font-mono p-4 md:p-10 relative overflow-hidden">
@@ -82,10 +118,10 @@ export default async function CeoDashboard() {
         {(busError || bookError || failedBookings.length > 0) && (
           <div className="bg-rose-950/40 border border-rose-500/50 rounded-xl p-4 text-xs text-rose-300 space-y-1 shadow-[0_0_15px_rgba(244,63,94,0.15)]">
             <p className="font-bold text-rose-400">⚠️ CRITICAL SYSTEM NOTICES:</p>
-            {busError && <p>• Businesses Table Error: {busError.message}</p>}
-            {bookError && <p>• Bookings Table Error: {bookError.message}</p>}
+            {busError && <p>Businesses Table Error: {busError.message}</p>}
+            {bookError && <p>Bookings Table Error: {bookError.message}</p>}
             {failedBookings.length > 0 && (
-              <p>• {failedBookings.length} booking WhatsApp notification(s) failed to dispatch. Verify Meta API tokens.</p>
+              <p>{failedBookings.length} booking WhatsApp notification(s) failed to dispatch. Verify Meta API tokens.</p>
             )}
           </div>
         )}
@@ -97,7 +133,9 @@ export default async function CeoDashboard() {
             <span className="text-xs text-cyan-400">{totalBusinesses} Active Listings</span>
           </div>
 
-          {totalBusinesses === 0 ? (
+          {loading ? (
+            <p className="text-xs text-cyan-400/70 italic py-4">Loading active businesses...</p>
+          ) : totalBusinesses === 0 ? (
             <p className="text-xs text-zinc-500 italic py-4">No businesses found in Supabase database.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -107,33 +145,52 @@ export default async function CeoDashboard() {
                     <th className="py-2.5 px-3">Business Name</th>
                     <th className="py-2.5 px-3">Category</th>
                     <th className="py-2.5 px-3">Pricing Model</th>
+                    <th className="py-2.5 px-3">Promotions / Specials</th>
                     <th className="py-2.5 px-3">WhatsApp Contact</th>
                     <th className="py-2.5 px-3">Live Route</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-900 text-zinc-300">
-                  {businesses?.map((b) => (
-                    <tr key={b.id} className="hover:bg-cyan-950/20 transition-colors">
-                      <td className="py-3 px-3 font-bold text-white">{b.name}</td>
-                      <td className="py-3 px-3 text-cyan-400">{b.category || "General"}</td>
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 border border-zinc-800 uppercase text-pink-400">
-                          {b.price_type || "Fixed"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3">{b.phone || b.whatsapp || "N/A"}</td>
-                      <td className="py-3 px-3">
-                        <a
-                          href={`https://hustlehubsecunda.co.za/${b.slug || ""}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-cyan-400 underline hover:text-cyan-300"
-                        >
-                          /{b.slug || "view"}
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
+                  {businesses.map((b) => {
+                    const isSpecialActive = Boolean(b.is_special || b.has_special || b.special_active);
+                    return (
+                      <tr key={b.id} className="hover:bg-cyan-950/20 transition-colors">
+                        <td className="py-3 px-3 font-bold text-white">{b.name}</td>
+                        <td className="py-3 px-3 text-cyan-400">{b.category || "General"}</td>
+                        <td className="py-3 px-3">
+                          <span className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 border border-zinc-800 uppercase text-pink-400">
+                            {b.price_type || "Fixed"}
+                          </span>
+                        </td>
+                        {/* SPECIALS TOGGLE COLUMN */}
+                        <td className="py-3 px-3">
+                          <button
+                            disabled={updatingId === b.id}
+                            onClick={() => toggleSpecial(b.id, isSpecialActive)}
+                            className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-all duration-200 flex items-center gap-1.5 ${
+                              isSpecialActive
+                                ? "bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.3)]"
+                                : "bg-zinc-900 text-zinc-500 border-zinc-800 hover:text-zinc-300"
+                            }`}
+                          >
+                            <span className={`w-2 h-2 rounded-full ${isSpecialActive ? "bg-amber-400 animate-pulse" : "bg-zinc-600"}`} />
+                            {updatingId === b.id ? "SAVING..." : isSpecialActive ? "SPECIAL LIVE 🔥" : "OFFLINE"}
+                          </button>
+                        </td>
+                        <td className="py-3 px-3">{b.phone || b.whatsapp || "N/A"}</td>
+                        <td className="py-3 px-3">
+                          <a
+                            href={`https://hustlehubsecunda.co.za/${b.slug || ""}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-cyan-400 underline hover:text-cyan-300"
+                          >
+                            /{b.slug || "view"}
+                          </a>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -147,7 +204,7 @@ export default async function CeoDashboard() {
             <p className="text-xs text-zinc-500 italic py-4">No recent booking logs recorded.</p>
           ) : (
             <div className="space-y-2">
-              {bookings?.slice(0, 10).map((book) => (
+              {bookings.slice(0, 10).map((book) => (
                 <div key={book.id} className="flex justify-between items-center p-3 rounded-lg bg-zinc-900/60 border border-zinc-800 text-xs">
                   <div>
                     <p className="font-bold text-white">{book.service_name || "Custom Service"}</p>
