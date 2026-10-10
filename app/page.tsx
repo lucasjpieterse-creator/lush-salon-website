@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
 import BusinessCard from "@/components/BusinessCard";
 
@@ -8,8 +8,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const categories = [
-  { id: "All", label: "✨ All" },
+const ALL_CATEGORY_MAP = [
   { id: "Hair", label: "💇‍♀️ Hair & Beauty" },
   { id: "Barber", label: "💈 Barber" },
   { id: "Nails", label: "💅 Nails" },
@@ -42,11 +41,32 @@ export default function HomePage() {
 
     fetchBusinesses();
 
-    // Optional: auto-refresh when switching back to the tab
+    // Auto-refresh when switching back to the tab
     const handleFocus = () => fetchBusinesses();
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, []);
+
+  // --- DYNAMICALLY FILTER CATEGORIES BASED ON EXISTING BUSINESSES ---
+  const activeCategories = useMemo(() => {
+    const activeIds = new Set<string>();
+
+    businesses.forEach((b) => {
+      const catLower = (b.category || "").toLowerCase();
+
+      ALL_CATEGORY_MAP.forEach((c) => {
+        if (
+          catLower.includes(c.id.toLowerCase()) ||
+          (c.id === "Auto" && catLower.includes("car"))
+        ) {
+          activeIds.add(c.id);
+        }
+      });
+    });
+
+    const activeList = ALL_CATEGORY_MAP.filter((c) => activeIds.has(c.id));
+    return [{ id: "All", label: "✨ All" }, ...activeList];
+  }, [businesses]);
 
   const filtered = businesses.filter((b) => {
     const matchCat =
@@ -85,8 +105,10 @@ export default function HomePage() {
             🇿🇦 100% Verified Secunda Providers
           </span>
         </div>
+
+        {/* DYNAMIC CATEGORIES BAR */}
         <div className="flex gap-2 mt-6 overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 md:mx-0 md:px-0">
-          {categories.map((cat) => (
+          {activeCategories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setFilter(cat.id)}
@@ -101,6 +123,7 @@ export default function HomePage() {
           ))}
         </div>
       </div>
+
       <div className="max-w-6xl mx-auto px-6 pb-10">
         {loading ? (
           <p className="text-zinc-500 text-sm animate-pulse">Loading hustlers...</p>
