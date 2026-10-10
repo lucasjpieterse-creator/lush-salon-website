@@ -61,7 +61,6 @@ export default function CEODashboard() {
     };
   }, [bookings]);
 
-  // Pending businesses waiting for approval
   const pendingBusinesses = businesses.filter((b) => b.is_approved === false);
 
   const sendAutomatedWhatsApp = async (phone: string, msg: string) => {
@@ -95,6 +94,20 @@ export default function CEODashboard() {
     }
 
     alert(`✅ ${biz.name} is now LIVE on the directory!`);
+  };
+
+  const handleRevoke = async (bizId: string) => {
+    if (!confirm("Hide this listing from the landing page?")) return;
+    const { error } = await supabase
+      .from("businesses")
+      .update({ is_approved: false })
+      .eq("id", bizId);
+
+    if (!error) {
+      setBusinesses(
+        businesses.map((b) => (b.id === bizId ? { ...b, is_approved: false } : b))
+      );
+    }
   };
 
   const handleToggleSpecial = async (biz: any) => {
@@ -154,7 +167,7 @@ export default function CEODashboard() {
         </div>
       )}
 
-      {/* ORIGINAL CYBERPUNK STATS GRID */}
+      {/* CYBERPUNK STATS GRID */}
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[20px] p-5">
           <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest">Total Platform Views</p>
@@ -209,6 +222,23 @@ export default function CEODashboard() {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
+                  {/* APPROVE / HIDE TOGGLE BUTTON */}
+                  {isApproved ? (
+                    <button
+                      onClick={() => handleRevoke(biz.id)}
+                      className="bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs px-3.5 py-2 rounded-full font-bold transition"
+                    >
+                      Hide Listing
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleApprove(biz)}
+                      className="bg-emerald-400 text-black hover:bg-emerald-300 text-xs px-4 py-2 rounded-full font-black transition shadow-lg"
+                    >
+                      ✅ Approve
+                    </button>
+                  )}
+
                   <button
                     onClick={() => handleToggleSpecial(biz)}
                     className={`text-xs px-3.5 py-2 rounded-full font-bold transition ${
