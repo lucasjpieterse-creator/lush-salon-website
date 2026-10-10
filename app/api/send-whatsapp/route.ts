@@ -5,13 +5,12 @@ export async function POST(req: Request) {
 
     const cleanTo = to.toString().replace(/\D/g, '').replace(/^0/, '27');
 
-    // Force template payload so Meta's Cloud API delivers outbound business messages
     const payload = {
       messaging_product: "whatsapp",
       to: cleanTo,
       type: "template",
       template: {
-        name: "hello_world",
+        name: "booking_notification",
         language: { code: "en_US" }
       }
     };
