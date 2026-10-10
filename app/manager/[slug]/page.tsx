@@ -12,11 +12,15 @@ export default function ManagerDetail() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Security PIN state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
   useEffect(() => {
     if (!slug) return;
     (async () => {
       setLoading(true);
-      // Support both UUID business_id and text slug lookup
       const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(slug);
       
       const query = supabase.from("businesses").select("*");
@@ -25,24 +29,34 @@ export default function ManagerDetail() {
         : await query.eq("slug", slug).single();
 
       if (bizErr || !biz) {
-        console.error("Error loading business:", bizErr);
         setLoading(false);
         return;
       }
 
       setBusiness(biz);
 
-      const { data: books, error: bookErr } = await supabase
+      const { data: books } = await supabase
         .from("bookings")
         .select("*")
         .eq("business_id", biz.id)
         .order("created_at", { ascending: false });
 
-      if (bookErr) console.error("Error loading bookings:", bookErr);
       setBookings(books || []);
       setLoading(false);
     })();
   }, [slug]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Default PIN is set to 1234 if none is configured in DB, or check business.manager_pin
+    const correctPin = business.manager_pin || "1234";
+    if (pinInput === correctPin) {
+      setIsAuthenticated(true);
+      setErrorMsg("");
+    } else {
+      setErrorMsg("Incorrect password / PIN. Try again.");
+    }
+  };
 
   const stats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -63,8 +77,7 @@ export default function ManagerDetail() {
     let phone = (phoneRaw || "").toString().replace(/\D/g, "");
     if (phone.startsWith("0")) phone = "27" + phone.slice(1);
     if (!phone) return alert("No client phone");
-    const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
+    window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`, "_blank");
   };
 
   const handleConfirm = async (bk: any) => {
@@ -78,7 +91,7 @@ export default function ManagerDetail() {
     if (!confirm("Cancel booking?")) return;
     await supabase.from("bookings").update({ status: "cancelled" }).eq("id", bk.id);
     setBookings(bookings.map(b => b.id === bk.id ? { ...b, status: "cancelled" } : b));
-    const msg = `Hi ${bk.client_name} 😔 Your booking at ${business.name} on ${bk.booking_date} at ${bk.booking_time} has been CANCELLED.\n\nIf you want to reschedule, please reply to this message.`;
+    const msg = `Hi ${bk.client_name} 😔 Your booking at ${business.name} on ${bk.booking_date} at ${bk.booking_time} has been CANCELLED.`;
     waToClient(bk.client_phone, msg);
   };
 
@@ -87,7 +100,7 @@ export default function ManagerDetail() {
     const newTime = prompt("New time HH:MM", bk.booking_time); if (!newTime) return;
     await supabase.from("bookings").update({ booking_date: newDate, booking_time: newTime, status: "confirmed" }).eq("id", bk.id);
     setBookings(bookings.map(b => b.id === bk.id ? { ...b, booking_date: newDate, booking_time: newTime, status: "confirmed" } : b));
-    const msg = `Hi ${bk.client_name}! 🔄 Your booking at ${business.name} has been MOVED to ${newDate} at ${newTime}.\nService: ${bk.service_name}\n\nPlease reply CONFIRM if this works for you.`;
+    const msg = `Hi ${bk.client_name}! 🔄 Your booking at ${business.name} has been MOVED to ${newDate} at ${newTime}.`;
     waToClient(bk.client_phone, msg);
   };
 
@@ -98,20 +111,53 @@ export default function ManagerDetail() {
     const total = todays.reduce((sum, b) => sum + (Number(b.service_price || b.price) || 0), 0);
     const list = todays.length > 0
       ? todays.map(b => `• ${b.client_name} - ${b.service_name} R${b.service_price || b.price || 0} at ${b.booking_time} (${b.status})`).join("\n")
-      : "No valid bookings today (only cancelled/tests)";
-    const msg = `📊 DAILY CLOSE-OUT - ${business.name}\nDate: ${today}\n\n${list}\n\nTotal Bookings: ${todays.length}\nTotal Revenue: R${total}\nPending: ${todaysAll.filter(b => b.status === 'pending').length}\nConfirmed: ${todaysAll.filter(b => b.status === 'confirmed').length}\n\nHustleHub Secunda`;
+      : "No valid bookings today";
+    const msg = `📊 DAILY CLOSE-OUT - ${business.name}\nDate: ${today}\n\n${list}\n\nTotal Revenue: R${total}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   if (loading) return <div className="min-h-screen bg-black text-white p-10 font-bold">Loading dashboard...</div>;
   if (!business) return <div className="min-h-screen bg-black text-white p-10 font-bold">Business not found.</div>;
 
+  // PASSWORD LOCK SCREEN
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6">
+        <div className="max-w-md w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-[24px] p-8 shadow-2xl">
+          <Link href="/manager" className="text-xs text-zinc-500 hover:text-white">← Back to Manager Hub</Link>
+          <h1 className="text-2xl font-black mt-4">{business.name}</h1>
+          <p className="text-zinc-400 text-xs mt-1">Enter manager password to access this portal.</p>
+          
+          <form onSubmit={handleLogin} className="mt-6 space-y-4">
+            <div>
+              <input
+                type="password"
+                placeholder="Enter PIN (default: 1234)"
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value)}
+                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white"
+                autoFocus
+              />
+            </div>
+            {errorMsg && <p className="text-red-400 text-xs font-bold">{errorMsg}</p>}
+            <button type="submit" className="w-full bg-white text-black font-bold text-xs py-3 rounded-xl hover:bg-zinc-200 transition">
+              Unlock Portal →
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   const bookingLink = `https://hustlehubsecunda.co.za/${business.slug}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(bookingLink)}`;
 
   return (
     <div className="min-h-screen bg-black text-white p-6 max-w-7xl mx-auto">
-      <Link href="/manager" className="text-sm text-zinc-500 hover:text-white">← Back to Manager Hub</Link>
+      <div className="flex justify-between items-center">
+        <Link href="/manager" className="text-sm text-zinc-500 hover:text-white">← Back to Manager Hub</Link>
+        <button onClick={() => setIsAuthenticated(false)} className="text-xs text-zinc-400 hover:text-white underline">Lock Portal</button>
+      </div>
 
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[16px] p-4">
