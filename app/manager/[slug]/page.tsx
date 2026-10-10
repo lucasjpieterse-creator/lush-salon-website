@@ -196,7 +196,6 @@ export default function ManagerDetail() {
     );
   }
 
-  // --- DYNAMIC QR CODE & LINK FIX ---
   const activeSlug = business.slug || business.id;
   const bookingLink = `https://hustlehub-secunda.vercel.app/${activeSlug}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(bookingLink)}`;
@@ -233,8 +232,8 @@ export default function ManagerDetail() {
       </button>
 
       <div className="mt-6 grid md:grid-cols-[340px_1fr] gap-6 items-start">
-        {/* Left Column: Info, QR & Payment Controls */}
-        <div className="space-y-4 sticky top-6">
+        {/* Left Column: Info, QR & Payment Controls (Sticky class removed so cards scroll naturally) */}
+        <div className="space-y-4">
           <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[24px] p-5">
             <h1 className="text-2xl font-black">{business.name}</h1>
             <p className="text-zinc-500 text-sm">{business.slug}</p>
