@@ -10,7 +10,7 @@ export default function BookingPage() {
 
   const [business, setBusiness] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
-  const [selectedService, setSelectedService] = useState<any>(null);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -39,7 +39,10 @@ export default function BookingPage() {
 
       const { data: servs } = await supabase.from("services").select("*").eq("business_id", biz.id);
       setServices(servs || []);
-      if (servs && servs[0]) setSelectedService(servs[0]);
+      // Default select the first service if available
+      if (servs && servs[0]) {
+        setSelectedServiceIds([servs[0].id]);
+      }
       setLoading(false);
     })();
   }, [slug]);
@@ -57,9 +60,24 @@ export default function BookingPage() {
     }
   };
 
+  const toggleServiceSelection = (serviceId: string) => {
+    if (selectedServiceIds.includes(serviceId)) {
+      // Don't allow deselecting if it's the only one selected
+      if (selectedServiceIds.length === 1) return;
+      setSelectedServiceIds(selectedServiceIds.filter(id => id !== serviceId));
+    } else {
+      setSelectedServiceIds([...selectedServiceIds, serviceId]);
+    }
+  };
+
+  // Compute selected services objects and total price
+  const selectedServicesList = services.filter(s => selectedServiceIds.includes(s.id));
+  const totalPrice = selectedServicesList.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
+  const serviceNamesString = selectedServicesList.map(s => s.name).join(" + ");
+
   const handleBooking = async (e: any) => {
     e.preventDefault();
-    if (!selectedService) return alert("Select a service");
+    if (selectedServiceIds.length === 0) return alert("Select at least one service");
     if (!formData.client_name || !formData.client_phone || !formData.booking_date || !formData.booking_time) {
       return alert("Fill all fields");
     }
@@ -83,8 +101,8 @@ export default function BookingPage() {
               business_id: business.id,
               client_name: formData.client_name,
               client_phone: formData.client_phone,
-              service_name: selectedService.name,
-              service_price: selectedService.price,
+              service_name: serviceNamesString,
+              service_price: totalPrice,
               booking_date: formData.booking_date,
               booking_time: formData.booking_time,
             },
@@ -95,7 +113,6 @@ export default function BookingPage() {
         setPaying(false);
 
         if (data.authorization_url) {
-          // Redirect to Paystack's official checkout page
           window.location.href = data.authorization_url;
           return;
         } else {
@@ -112,8 +129,8 @@ export default function BookingPage() {
     // --- STANDARD FREE / NO-DEPOSIT BOOKING FALLBACK ---
     const payload = {
       business_id: business.id,
-      service_name: selectedService.name,
-      service_price: selectedService.price,
+      service_name: serviceNamesString,
+      service_price: totalPrice,
       client_name: formData.client_name,
       client_phone: formData.client_phone,
       booking_date: formData.booking_date,
@@ -130,12 +147,12 @@ export default function BookingPage() {
     if (ownerPhone.startsWith("0")) ownerPhone = "27" + ownerPhone.slice(1);
 
     // 1. Send automated notification to CLIENT
-    const clientMsg = `🗓️ Booking Request Received - ${business.name}\n\nService: ${selectedService.name} (R${selectedService.price})\nDate & Time: ${formData.booking_date} at ${formData.booking_time}\nStatus: Pending Confirmation\n\nHi ${formData.client_name}, your booking request has been submitted! The owner will confirm shortly.`;
+    const clientMsg = `🗓️ Booking Request Received - ${business.name}\n\nServices: ${serviceNamesString} (Total: R${totalPrice})\nDate & Time: ${formData.booking_date} at ${formData.booking_time}\nStatus: Pending Confirmation\n\nHi ${formData.client_name}, your booking request has been submitted!`;
     await sendAutomatedWhatsApp(formData.client_phone, clientMsg);
 
     // 2. Send automated notification to OWNER
     if (ownerPhone) {
-      const ownerMsg = `🔔 NEW BOOKING - ${business.name}\n\n👤 Client: ${formData.client_name}\n📱 ${formData.client_phone}\n💅 Service: ${selectedService.name} (R${selectedService.price})\n📅 Date: ${formData.booking_date} at ${formData.booking_time}\n\nManage here: https://hustlehubsecunda.co.za/manager/${business.slug}`;
+      const ownerMsg = `🔔 NEW MULTI-SERVICE BOOKING - ${business.name}\n\n👤 Client: ${formData.client_name}\n📱 ${formData.client_phone}\n💅 Services: ${serviceNamesString} (R${totalPrice})\n📅 Date: ${formData.booking_date} at ${formData.booking_time}\n\nManage here: https://hustlehubsecunda.co.za/manager/${business.slug}`;
       await sendAutomatedWhatsApp(ownerPhone, ownerMsg);
     }
 
@@ -157,7 +174,7 @@ export default function BookingPage() {
             Your booking at {business.name} for {formData.booking_date} at {formData.booking_time} is submitted. Details have been sent to your WhatsApp.
           </p>
           <p className="text-white font-bold mt-4">
-            {selectedService?.name} — R{selectedService?.price}
+            {serviceNamesString} — R{totalPrice}
           </p>
           <button onClick={() => setSuccess(false)} className="mt-6 bg-white text-black w-full py-3 rounded-full font-bold text-sm">
             Book Another
@@ -181,20 +198,32 @@ export default function BookingPage() {
         <p className="text-zinc-500 text-sm mt-1">{business.category} // Secunda</p>
 
         <div className="mt-6">
-          <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Select Service</p>
+          <div className="flex justify-between items-center">
+            <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Select Services (Multi-select)</p>
+            <span className="text-[11px] text-zinc-500 font-bold">{selectedServiceIds.length} selected</span>
+          </div>
           <div className="mt-3 grid gap-2">
-            {services.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setSelectedService(s)}
-                className={`text-left p-4 rounded-[14px] border text-sm font-bold flex justify-between ${
-                  selectedService?.id === s.id ? "bg-white text-black border-white" : "bg-[#0F0F0F] border-[#2A2A2A] text-white"
-                }`}
-              >
-                <span>{s.name}</span>
-                <span>R{s.price}</span>
-              </button>
-            ))}
+            {services.map((s) => {
+              const isSelected = selectedServiceIds.includes(s.id);
+              return (
+                <button
+                  type="button"
+                  key={s.id}
+                  onClick={() => toggleServiceSelection(s.id)}
+                  className={`text-left p-4 rounded-[14px] border text-sm font-bold flex justify-between items-center transition ${
+                    isSelected ? "bg-white text-black border-white" : "bg-[#0F0F0F] border-[#2A2A2A] text-white hover:border-zinc-700"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center text-xs ${isSelected ? "bg-black text-white border-black" : "border-zinc-700 bg-black"}`}>
+                      {isSelected && "✓"}
+                    </div>
+                    <span>{s.name}</span>
+                  </div>
+                  <span>R{s.price}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -234,8 +263,8 @@ export default function BookingPage() {
             {paying
               ? "Connecting to Paystack..."
               : isDepositRequired && depositAmount > 0
-              ? `Pay R${depositAmount} Deposit & Book`
-              : `Confirm Booking - R${selectedService?.price || ""}`}
+              ? `Pay R${depositAmount} Deposit & Book (${selectedServiceIds.length} services)`
+              : `Confirm Booking - R${totalPrice}`}
           </button>
           
           <p className="text-[11px] text-zinc-600 text-center mt-2">
