@@ -1,3 +1,5 @@
+// Force dynamic server rendering so specials sync instantly
+export const revalidate = 0;
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
