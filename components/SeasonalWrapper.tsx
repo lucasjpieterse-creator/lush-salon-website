@@ -19,30 +19,30 @@ export default function SeasonalWrapper({
     <div className="flex flex-col min-h-screen relative">
       {/* Top Header Navigation */}
       {!isCeoPage && (
-        <header className="w-full bg-black/80 backdrop-blur-md border-b border-zinc-800 sticky top-0 z-40 px-4 py-3">
+        <header className="w-full bg-black/80 backdrop-blur-md border-b border-zinc-800 sticky top-0 z-50 px-3 md:px-4 py-2.5">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="font-extrabold text-xl tracking-tight text-white flex items-center gap-2">
+            <Link href="/" className="font-extrabold text-lg md:text-xl tracking-tight text-white flex items-center gap-1.5 shrink-0">
               <span className="text-orange-500">HustleHub</span>
-              <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full border border-zinc-700">
+              <span className="text-[10px] md:text-xs bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full border border-zinc-700">
                 Secunda
               </span>
             </Link>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-3 z-50">
-              {/* + Add Hustle -> app/join */}
+            <div className="flex items-center gap-2 md:gap-3 z-50">
+              {/* + Add Hustle */}
               <Link
                 href="/join"
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1 shadow-lg shadow-emerald-900/20"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[11px] md:text-xs px-2.5 py-1.5 md:px-3.5 md:py-2 rounded-lg transition-colors flex items-center gap-1 shadow-lg shadow-emerald-900/20 whitespace-nowrap"
               >
                 <span>+</span> Add Hustle
               </Link>
 
-              {/* Manager Portal -> app/manager */}
+              {/* Manager Portal */}
               <Link
                 href="/manager"
-                className="bg-zinc-900 hover:bg-zinc-800 text-cyan-400 border border-cyan-500/40 font-semibold text-xs px-3.5 py-2 rounded-lg transition-colors shadow-lg shadow-cyan-950/40"
+                className="bg-zinc-900 hover:bg-zinc-800 text-cyan-400 border border-cyan-500/40 font-semibold text-[11px] md:text-xs px-2.5 py-1.5 md:px-3.5 md:py-2 rounded-lg transition-colors shadow-lg shadow-cyan-950/40 whitespace-nowrap"
               >
                 Manager Portal 💼
               </Link>
@@ -54,10 +54,12 @@ export default function SeasonalWrapper({
       {/* Main Page Content */}
       <main className="flex-grow">{children}</main>
 
-      {/* Seasonal Effects & Footer */}
+      {/* Seasonal Effects (Passes clicks through) & Footer */}
       {!isCeoPage && (
         <>
-          <SeasonalEffects />
+          <div className="pointer-events-none fixed inset-0 z-30">
+            <SeasonalEffects />
+          </div>
           <Footer />
         </>
       )}
