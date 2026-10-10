@@ -155,7 +155,7 @@ export default function ManagerDetail() {
         ? todays
             .map(
               (b) =>
-                `• ${b.client_name} - ${b.service_name} R${b.service_price || b.price || 0} at ${b.booking_time} (${b.status})`
+                `• ${b.client_name} — ${b.service_name} (R${b.service_price || b.price || 0}) at ${b.booking_time} [${b.status}]`
             )
             .join("\n")
         : "No valid bookings today";
@@ -196,7 +196,9 @@ export default function ManagerDetail() {
     );
   }
 
-  const bookingLink = `https://hustlehubsecunda.co.za/${business.slug}`;
+  // --- DYNAMIC QR CODE & LINK FIX ---
+  const activeSlug = business.slug || business.id;
+  const bookingLink = `https://hustlehub-secunda.vercel.app/${activeSlug}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(bookingLink)}`;
 
   return (
@@ -237,7 +239,7 @@ export default function ManagerDetail() {
             <h1 className="text-2xl font-black">{business.name}</h1>
             <p className="text-zinc-500 text-sm">{business.slug}</p>
             <div className="mt-5 bg-white rounded-[20px] p-4 flex flex-col items-center">
-              <img src={qrUrl} alt="QR" className="w-56 h-56 rounded-xl" />
+              <img src={qrUrl} alt="QR Code" className="w-56 h-56 rounded-xl" />
               <p className="text-black font-bold text-[11px] mt-3 break-all text-center">{bookingLink}</p>
             </div>
           </div>
@@ -317,7 +319,7 @@ export default function ManagerDetail() {
                       <p className="text-xs text-zinc-400">{bk.client_phone}</p>
                     </div>
                     <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold ${bk.status === "confirmed" ? "bg-green-500/20 text-green-400" : "bg-orange-500/20 text-orange-400"}`}>
-                      {bk.status} - R{bk.service_price || bk.price || 0}
+                      {bk.status} — R{bk.service_price || bk.price || 0}
                     </span>
                   </div>
                   <p className="text-xs text-zinc-400 mt-2">
