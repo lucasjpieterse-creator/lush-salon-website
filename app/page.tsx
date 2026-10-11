@@ -60,7 +60,7 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white p-6 max-w-7xl mx-auto selection:bg-cyan-500 selection:text-black pb-24 relative overflow-hidden">
+    <main className="min-h-screen bg-black text-white p-6 max-w-7xl mx-auto selection:bg-cyan-500 selection:text-black pb-32 relative overflow-hidden">
       {/* FULLY AUTOMATED SEASONAL OVERLAY - ALWAYS ON TOP (z-50) */}
       <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
         {/* TOP RIGHT GLOWING ELEMENT */}
@@ -265,6 +265,22 @@ export default function LandingPage() {
           );
         })}
       </div>
+
+      {/* FOOTER - LEGAL LINKS & COPYRIGHT */}
+      <footer className="mt-16 pt-8 border-t border-zinc-800 text-center font-mono text-xs text-zinc-500 relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          © {new Date().getFullYear()} HustleHub Secunda. All rights reserved.
+        </div>
+        <div className="flex items-center gap-4 text-zinc-400">
+          <Link href="/privacy" className="hover:text-cyan-400 transition">
+            Privacy Policy (POPIA)
+          </Link>
+          <span>•</span>
+          <Link href="/terms" className="hover:text-cyan-400 transition">
+            Terms of Service
+          </Link>
+        </div>
+      </footer>
 
       {/* FLOATING "REQUEST A SERVICE" BANNER */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-xl bg-black/90 border border-cyan-500/40 rounded-full px-6 py-3 flex items-center justify-between shadow-[0_0_25px_rgba(6,182,212,0.3)] backdrop-blur-md z-40">
