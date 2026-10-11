@@ -8,7 +8,7 @@ import Link from "next/link";
 export default function PublicBookingPage() {
   const params = useParams();
   const router = useRouter();
-  const slug = params?.slug as string;
+  const rawParam = params?.slug as string;
 
   const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -23,29 +23,42 @@ export default function PublicBookingPage() {
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    if (!slug) return;
+    if (!rawParam) return;
 
     const fetchBusiness = async () => {
       setLoading(true);
 
-      const { data, error } = await supabase
-        .from("businesses")
-        .select("*")
-        .or(`slug.eq.${slug},id.eq.${slug}`)
-        .single();
+      // Clean parameter
+      const decodedParam = decodeURIComponent(rawParam).trim();
+
+      // Check if decodedParam is a valid UUID
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decodedParam);
+
+      let query = supabase.from("businesses").select("*");
+
+      if (isUUID) {
+        query = query.or(`id.eq.${decodedParam},slug.eq.${decodedParam}`);
+      } else {
+        query = query.eq("slug", decodedParam);
+      }
+
+      const { data, error } = await query.maybeSingle();
+
+      if (error) {
+        console.error("Error fetching business:", error.message);
+      }
 
       if (data) {
         setBusiness(data);
 
-        // Increment Views Count safely without TypeScript RPC errors
+        // Safe view counter increment
         try {
-          await supabase.rpc("increment_views", { biz_id: data.id });
-        } catch (e) {
-          // Fallback view counter update if RPC is missing
           await supabase
             .from("businesses")
             .update({ views: (data.views || 0) + 1 })
             .eq("id", data.id);
+        } catch (e) {
+          console.error("Failed to update view counter:", e);
         }
       }
 
@@ -53,7 +66,7 @@ export default function PublicBookingPage() {
     };
 
     fetchBusiness();
-  }, [slug]);
+  }, [rawParam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,11 +85,7 @@ export default function PublicBookingPage() {
       status: "pending",
     };
 
-    const { data: insertedBooking, error } = await supabase
-      .from("bookings")
-      .insert([bookingPayload])
-      .select()
-      .single();
+    const { error } = await supabase.from("bookings").insert([bookingPayload]);
 
     if (error) {
       alert("Booking failed: " + error.message);
@@ -84,7 +93,6 @@ export default function PublicBookingPage() {
       return;
     }
 
-    // Format WhatsApp Confirmation Message
     const targetPhone = (
       business.whatsapp_number ||
       business.whatsapp ||
@@ -98,7 +106,6 @@ export default function PublicBookingPage() {
       ? `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`
       : `#`;
 
-    // Trigger Automated WhatsApp API Dispatch if available
     try {
       await fetch("/api/send-whatsapp", {
         method: "POST",
@@ -109,7 +116,6 @@ export default function PublicBookingPage() {
       console.log("Fallback to Direct WhatsApp link");
     }
 
-    // Redirect client directly to WhatsApp or confirmation
     if (targetPhone) {
       window.location.href = waUrl;
     } else {
@@ -128,10 +134,10 @@ export default function PublicBookingPage() {
 
   if (!business) {
     return (
-      <div className="min-h-screen bg-black text-white p-10 font-mono text-center">
-        <h1 className="text-2xl font-black text-red-400">Business Listing Not Found</h1>
-        <p className="text-xs text-zinc-500 mt-2">The requested page does not exist or has been removed.</p>
-        <Link href="/" className="mt-4 inline-block text-xs bg-cyan-400 text-black px-5 py-2.5 rounded-full font-bold">
+      <div className="min-h-screen bg-black text-white p-10 font-mono text-center flex flex-col items-center justify-center">
+        <h1 className="text-3xl font-black text-red-500">Business Listing Not Found</h1>
+        <p className="text-xs text-zinc-400 mt-2">The requested business page does not exist or has not been approved yet.</p>
+        <Link href="/" className="mt-6 inline-block text-xs bg-cyan-400 text-black px-6 py-3 rounded-full font-bold hover:bg-cyan-300 transition">
           ← Back to Directory
         </Link>
       </div>
@@ -233,7 +239,7 @@ export default function PublicBookingPage() {
             </div>
 
             <div>
-              <label className="text-[11px] font-mono text-zinc-400 block mb-1">SPECIAL INSTRUCTIONS / NOTES (OPTIONAL)</label>
+              <label className="text-[11px] font-mono text-zinc-400 block mb-1">NOTES / SPECIAL REQUESTS</label>
               <textarea
                 rows={3}
                 placeholder="Any special requests or details..."
