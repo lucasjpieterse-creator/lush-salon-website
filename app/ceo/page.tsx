@@ -10,31 +10,28 @@ export default function CEODashboard() {
   const [viewsCount, setViewsCount] = useState<number>(0);
   const [waLogs, setWaLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterTab, setFilterTab] = useState<"ALL" | "PENDING" | "LIVE" | "SPECIALS">("ALL");
 
   const fetchData = async () => {
     setLoading(true);
 
-    // 1. Fetch All Businesses
     const { data: bizData } = await supabase
       .from("businesses")
       .select("*")
       .order("created_at", { ascending: false });
     setBusinesses(bizData || []);
 
-    // 2. Fetch All Bookings
     const { data: bookData } = await supabase
       .from("bookings")
       .select("*")
       .order("created_at", { ascending: false });
     setBookings(bookData || []);
 
-    // 3. Fetch Platform Views Count
     const { count } = await supabase
       .from("business_views")
       .select("*", { count: "exact", head: true });
     setViewsCount(count || 0);
 
-    // 4. Fetch Live API Logs from Supabase
     const { data: logData } = await supabase
       .from("api_logs")
       .select("*")
@@ -49,7 +46,6 @@ export default function CEODashboard() {
     fetchData();
   }, []);
 
-  // --- STATS CALCULATION ---
   const stats = useMemo(() => {
     const today = new Date().toISOString().split("T")[0];
     const todaysBookings = bookings.filter((b) => b.booking_date === today);
@@ -70,11 +66,16 @@ export default function CEODashboard() {
 
   const pendingBusinesses = businesses.filter((b) => b.is_approved === false);
 
+  const filteredBusinesses = businesses.filter((b) => {
+    if (filterTab === "PENDING") return b.is_approved === false;
+    if (filterTab === "LIVE") return b.is_approved !== false;
+    if (filterTab === "SPECIALS") return b.is_special === true;
+    return true;
+  });
+
   const logApiEvent = async (recipient: string, type: string, status: string, message: string) => {
     const newLog = { recipient, type, status, message };
-    // Save to Supabase
     await supabase.from("api_logs").insert([newLog]);
-    // Refresh logs in state
     const { data } = await supabase
       .from("api_logs")
       .select("*")
@@ -146,7 +147,6 @@ export default function CEODashboard() {
     return (
       <div className="min-h-screen bg-black text-cyan-400 p-10 font-mono font-bold flex flex-col items-center justify-center">
         <div className="text-2xl animate-pulse">⚡ INITIALIZING CYBERPUNK CEO MATRIX...</div>
-        <p className="text-xs text-zinc-500 mt-2">Connecting to Supabase PostgreSQL & Meta API gateway...</p>
       </div>
     );
   }
@@ -174,7 +174,7 @@ export default function CEODashboard() {
         </Link>
       </div>
 
-      {/* NEW HUSTLE PENDING APPROVAL ALERT BAR */}
+      {/* PENDING APPROVAL ALERT BAR */}
       {pendingBusinesses.length > 0 && (
         <div className="mt-6 bg-gradient-to-r from-amber-500/10 via-amber-500/20 to-amber-500/10 border border-amber-500/50 rounded-[20px] p-5 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
           <div className="flex items-center justify-between mb-3">
@@ -213,7 +213,7 @@ export default function CEODashboard() {
         </div>
       )}
 
-      {/* CYBERPUNK STATS GRID */}
+      {/* STATS GRID */}
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-[#121212] border border-cyan-500/20 rounded-[20px] p-5">
           <p className="text-[10px] text-cyan-400 uppercase font-mono font-bold tracking-widest">Total Platform Views</p>
@@ -240,7 +240,7 @@ export default function CEODashboard() {
         </div>
       </div>
 
-      {/* PERSISTENT LIVE API LOGS & INTEGRATION STATUS PANEL */}
+      {/* PERSISTENT API LOGS MONITOR */}
       <div className="mt-8 bg-[#121212] border border-fuchsia-500/30 rounded-[24px] p-6">
         <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
           <div>
@@ -282,13 +282,34 @@ export default function CEODashboard() {
         </div>
       </div>
 
-      {/* HUSTLE MANAGEMENT DIRECTORY */}
+      {/* HUSTLE MANAGEMENT DIRECTORY WITH FILTER TABS */}
       <div className="mt-8">
-        <h2 className="text-xl font-black tracking-tight text-white font-mono">Hustle Management Directory</h2>
-        <p className="text-xs text-zinc-400 mt-1">Manage listings, toggle specials, and view analytics.</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-black tracking-tight text-white font-mono">Hustle Management Directory</h2>
+            <p className="text-xs text-zinc-400 mt-1">Manage listings, toggle specials, and view analytics.</p>
+          </div>
+
+          {/* FILTER TABS */}
+          <div className="flex items-center gap-2 font-mono">
+            {(["ALL", "PENDING", "LIVE", "SPECIALS"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setFilterTab(tab)}
+                className={`text-[10px] px-3 py-1.5 rounded-full font-bold transition ${
+                  filterTab === tab
+                    ? "bg-cyan-400 text-black font-black"
+                    : "bg-[#121212] text-zinc-400 border border-zinc-800 hover:text-white"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="mt-4 space-y-3">
-          {businesses.map((biz) => {
+          {filteredBusinesses.map((biz) => {
             const isApproved = biz.is_approved !== false;
             return (
               <div
