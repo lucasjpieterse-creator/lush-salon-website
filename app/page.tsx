@@ -26,6 +26,22 @@ export default function LandingPage() {
     };
 
     fetchApprovedBusinesses();
+
+    // SUPABASE REALTIME SUBSCRIPTION FOR INSTANT PROMOTION / APPROVAL UPDATES
+    const channel = supabase
+      .channel("public:businesses")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "businesses" },
+        () => {
+          fetchApprovedBusinesses();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const categories = ["All", ...Array.from(new Set(businesses.map((b) => b.category).filter(Boolean)))];
@@ -73,7 +89,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* DYNAMIC SEASONAL KEYFRAME ANIMATIONS WITH FORWARD-FACING FLIP */}
+      {/* DYNAMIC SEASONAL KEYFRAME ANIMATIONS */}
       <style jsx global>{`
         @keyframes seasonPulse {
           0%, 100% {
@@ -191,9 +207,12 @@ export default function LandingPage() {
               key={biz.id}
               className={`bg-[#121212] border rounded-[24px] p-6 flex flex-col justify-between transition ${
                 biz.is_special
-                  ? "border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
+                  ? `shadow-[0_0_20px_rgba(${theme.glowColorRgb},0.25)]`
                   : "border-zinc-800 hover:border-cyan-500/40"
               }`}
+              style={{
+                borderColor: biz.is_special ? `rgba(${theme.glowColorRgb}, 0.7)` : undefined,
+              }}
             >
               <div>
                 <div className="flex items-center justify-between">
@@ -201,8 +220,10 @@ export default function LandingPage() {
                     {biz.category || "General Service"}
                   </span>
                   {biz.is_special && (
-                    <span className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-400 px-2.5 py-0.5 rounded-full border border-amber-500/30">
-                      🔥 PROMOTED
+                    <span
+                      className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border ${theme.badgeBg} ${theme.badgeText}`}
+                    >
+                      {theme.primaryEmoji} PROMOTED SPECIAL
                     </span>
                   )}
                 </div>
