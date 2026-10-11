@@ -90,7 +90,9 @@ export default function ManagerPortal() {
     }
 
     setActionLoadingId(booking.id);
-    const newStatus = action === "confirm" ? "confirmed" : action === "reschedule" ? "rescheduled" : "declined";
+    
+    // Map 'decline' to 'cancelled' so it matches the Supabase booking_status enum
+    const newStatus = action === "confirm" ? "confirmed" : action === "reschedule" ? "rescheduled" : "cancelled";
     
     // 1. Update status in Supabase
     const { error } = await supabase.from("bookings").update({ status: newStatus }).eq("id", booking.id);
@@ -104,7 +106,7 @@ export default function ManagerPortal() {
     // 2. Update local state so status badge changes immediately
     setBookings(bookings.map((b) => (b.id === booking.id ? { ...b, status: newStatus } : b)));
 
-    // 3. Prepare message payload for automated dispatch
+    // 3. Prepare message payload for automated background WhatsApp dispatch
     const clientPhone = (booking.client_phone || "").replace(/[^0-9]/g, "");
     let textMessage = "";
 
@@ -116,7 +118,7 @@ export default function ManagerPortal() {
       textMessage = `Hi ${booking.client_name}! Unfortunately, ${business.name} is unable to accept your booking request for ${booking.booking_date} at ${booking.booking_time}. Apologies for any inconvenience!`;
     }
 
-    // 4. Send background WhatsApp request via API route without redirecting
+    // 4. Send background WhatsApp notification without redirecting
     if (clientPhone && textMessage) {
       try {
         await fetch("/api/send-whatsapp", {
@@ -139,7 +141,7 @@ export default function ManagerPortal() {
   const todayStr = new Date().toISOString().split("T")[0];
   const todayBookingsCount = bookings.filter((b) => b.booking_date === todayStr).length;
   const totalRevenue = bookings
-    .filter((b) => b.status !== "declined")
+    .filter((b) => b.status !== "cancelled" && b.status !== "declined")
     .reduce((sum, b) => sum + (Number(b.service_price) || Number(b.price) || 0), 0);
 
   return (
@@ -256,7 +258,7 @@ export default function ManagerPortal() {
                       ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
                       : currentStatus === "rescheduled"
                       ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
-                      : currentStatus === "declined"
+                      : currentStatus === "cancelled" || currentStatus === "declined"
                       ? "bg-red-500/20 text-red-400 border-red-500/40"
                       : "bg-cyan-500/20 text-cyan-400 border-cyan-500/40";
 
@@ -306,7 +308,7 @@ export default function ManagerPortal() {
                         </div>
                       )}
 
-                      {/* ACTION BUTTONS (AUTOMATED WHATSAPP BACKEND DISPATCH) */}
+                      {/* ACTION BUTTONS */}
                       <div className="pt-2 flex flex-wrap items-center gap-2 font-mono">
                         <button
                           disabled={isProcessing}
