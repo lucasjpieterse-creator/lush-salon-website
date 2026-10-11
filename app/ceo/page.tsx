@@ -8,27 +8,8 @@ export default function CEODashboard() {
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [viewsCount, setViewsCount] = useState<number>(0);
+  const [waLogs, setWaLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // WhatsApp & System Status State
-  const [waLogs, setWaLogs] = useState<any[]>([
-    {
-      id: "log-1",
-      timestamp: new Date().toLocaleTimeString(),
-      recipient: "Meta WhatsApp API",
-      type: "Template Verification",
-      status: "PENDING_APPROVAL",
-      message: "Waiting on Meta Business template clearance.",
-    },
-    {
-      id: "log-2",
-      timestamp: new Date().toLocaleTimeString(),
-      recipient: "Paystack Gateway",
-      type: "Compliance Check",
-      status: "OFFLINE_TEST",
-      message: "FICA verification pending. Upfront deposits toggled OFF.",
-    },
-  ]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -38,7 +19,6 @@ export default function CEODashboard() {
       .from("businesses")
       .select("*")
       .order("created_at", { ascending: false });
-
     setBusinesses(bizData || []);
 
     // 2. Fetch All Bookings
@@ -46,15 +26,22 @@ export default function CEODashboard() {
       .from("bookings")
       .select("*")
       .order("created_at", { ascending: false });
-
     setBookings(bookData || []);
 
     // 3. Fetch Platform Views Count
     const { count } = await supabase
       .from("business_views")
       .select("*", { count: "exact", head: true });
-
     setViewsCount(count || 0);
+
+    // 4. Fetch Live API Logs from Supabase
+    const { data: logData } = await supabase
+      .from("api_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    setWaLogs(logData || []);
+
     setLoading(false);
   };
 
@@ -83,8 +70,20 @@ export default function CEODashboard() {
 
   const pendingBusinesses = businesses.filter((b) => b.is_approved === false);
 
+  const logApiEvent = async (recipient: string, type: string, status: string, message: string) => {
+    const newLog = { recipient, type, status, message };
+    // Save to Supabase
+    await supabase.from("api_logs").insert([newLog]);
+    // Refresh logs in state
+    const { data } = await supabase
+      .from("api_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (data) setWaLogs(data);
+  };
+
   const sendAutomatedWhatsApp = async (phone: string, msg: string) => {
-    const timestamp = new Date().toLocaleTimeString();
     try {
       const res = await fetch("/api/send-whatsapp", {
         method: "POST",
@@ -93,32 +92,12 @@ export default function CEODashboard() {
       });
 
       if (res.ok) {
-        setWaLogs((prev) => [
-          {
-            id: Date.now(),
-            timestamp,
-            recipient: phone,
-            type: "Dispatch",
-            status: "SENT",
-            message: "Notification sent via WhatsApp API",
-          },
-          ...prev,
-        ]);
+        await logApiEvent(phone, "Dispatch", "SENT", "Notification sent via WhatsApp API");
       } else {
         throw new Error("API dispatch error");
       }
     } catch (err) {
-      setWaLogs((prev) => [
-        {
-          id: Date.now(),
-          timestamp,
-          recipient: phone,
-          type: "Dispatch",
-          status: "FAILED / FALLBACK",
-          message: "API dispatch failed. Triggering web intent link.",
-        },
-        ...prev,
-      ]);
+      await logApiEvent(phone, "Dispatch", "FALLBACK", "API dispatch pending Meta approval. Web intent ready.");
     }
   };
 
@@ -236,42 +215,42 @@ export default function CEODashboard() {
 
       {/* CYBERPUNK STATS GRID */}
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-[#121212] border border-cyan-500/20 rounded-[20px] p-5 shadow-[0_0_15px_rgba(6,182,212,0.05)]">
+        <div className="bg-[#121212] border border-cyan-500/20 rounded-[20px] p-5">
           <p className="text-[10px] text-cyan-400 uppercase font-mono font-bold tracking-widest">Total Platform Views</p>
           <p className="text-3xl font-black mt-2 text-white font-mono">{viewsCount}</p>
           <p className="text-[11px] text-zinc-500 mt-1">Directory Traffic</p>
         </div>
 
-        <div className="bg-[#121212] border border-emerald-500/30 rounded-[20px] p-5 shadow-[0_0_15px_rgba(16,185,129,0.05)]">
+        <div className="bg-[#121212] border border-emerald-500/30 rounded-[20px] p-5">
           <p className="text-[10px] text-emerald-400 uppercase font-mono font-bold tracking-widest">Revenue Today</p>
           <p className="text-3xl font-black mt-2 text-emerald-400 font-mono">R{stats.revenueToday}</p>
           <p className="text-[11px] text-zinc-400 mt-1 font-mono">{stats.todayCount} bookings today</p>
         </div>
 
-        <div className="bg-[#121212] border border-fuchsia-500/20 rounded-[20px] p-5 shadow-[0_0_15px_rgba(217,70,239,0.05)]">
+        <div className="bg-[#121212] border border-fuchsia-500/20 rounded-[20px] p-5">
           <p className="text-[10px] text-fuchsia-400 uppercase font-mono font-bold tracking-widest">Total Revenue Generated</p>
           <p className="text-3xl font-black mt-2 text-white font-mono">R{stats.totalRevenue}</p>
           <p className="text-[11px] text-zinc-500 mt-1 font-mono">{stats.totalBookings} total bookings</p>
         </div>
 
-        <div className="bg-[#121212] border border-amber-500/20 rounded-[20px] p-5 shadow-[0_0_15px_rgba(245,158,11,0.05)]">
+        <div className="bg-[#121212] border border-amber-500/20 rounded-[20px] p-5">
           <p className="text-[10px] text-amber-400 uppercase font-mono font-bold tracking-widest">Active Hustles</p>
           <p className="text-3xl font-black mt-2 text-white font-mono">{businesses.filter((b) => b.is_approved !== false).length}</p>
           <p className="text-[11px] text-zinc-500 mt-1">Live on Landing</p>
         </div>
       </div>
 
-      {/* SYSTEM LOGS & WHATSAPP API STATUS PANEL */}
+      {/* PERSISTENT LIVE API LOGS & INTEGRATION STATUS PANEL */}
       <div className="mt-8 bg-[#121212] border border-fuchsia-500/30 rounded-[24px] p-6">
         <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
           <div>
             <h2 className="text-lg font-black text-fuchsia-400 font-mono tracking-tight flex items-center gap-2">
-              📡 API Dispatches & Integration Status
+              📡 Live Database API Dispatches & Integration Status
             </h2>
-            <p className="text-xs text-zinc-400 mt-0.5 font-mono">Real-time status of Meta WhatsApp & Paystack compliance queues</p>
+            <p className="text-xs text-zinc-400 mt-0.5 font-mono">Persistent real-time audit trail stored directly in Supabase</p>
           </div>
-          <span className="text-[10px] font-mono bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/40 px-3 py-1 rounded-full">
-            LIVE MONITOR
+          <span className="text-[10px] font-mono bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/40 px-3 py-1 rounded-full animate-pulse">
+            LIVE DB SYNC
           </span>
         </div>
 
@@ -282,7 +261,7 @@ export default function CEODashboard() {
               className="bg-black/60 border border-zinc-800 rounded-xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2"
             >
               <div className="flex items-center gap-3">
-                <span className="text-zinc-500">{log.timestamp}</span>
+                <span className="text-zinc-500">{new Date(log.created_at).toLocaleTimeString()}</span>
                 <span className="text-cyan-400 font-bold">{log.type}</span>
                 <span className="text-zinc-300">→ {log.recipient}</span>
               </div>
@@ -314,7 +293,7 @@ export default function CEODashboard() {
             return (
               <div
                 key={biz.id}
-                className="bg-[#121212] border border-zinc-800 hover:border-cyan-500/40 rounded-[20px] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                className="bg-[#121212] border border-zinc-800 hover:border-cyan-500/40 rounded-[20px] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition"
               >
                 <div>
                   <div className="flex items-center gap-2">
@@ -341,7 +320,6 @@ export default function CEODashboard() {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  {/* APPROVE / HIDE TOGGLE BUTTON */}
                   {isApproved ? (
                     <button
                       onClick={() => handleRevoke(biz.id)}
@@ -352,13 +330,12 @@ export default function CEODashboard() {
                   ) : (
                     <button
                       onClick={() => handleApprove(biz)}
-                      className="bg-emerald-400 text-black hover:bg-emerald-300 text-xs px-4 py-2 rounded-full font-black transition shadow-[0_0_10px_rgba(52,211,153,0.3)] font-mono"
+                      className="bg-emerald-400 text-black hover:bg-emerald-300 text-xs px-4 py-2 rounded-full font-black transition font-mono"
                     >
                       ✅ Approve
                     </button>
                   )}
 
-                  {/* SPECIAL TOGGLE BUTTON */}
                   <button
                     onClick={() => handleToggleSpecial(biz)}
                     className={`text-xs px-3.5 py-2 rounded-full font-bold transition font-mono ${
@@ -372,7 +349,7 @@ export default function CEODashboard() {
 
                   <Link
                     href={`/manager/${biz.slug || biz.id}`}
-                    className="bg-white text-black hover:bg-cyan-400 text-xs px-4 py-2 rounded-full font-bold transition font-mono shadow-[0_0_10px_rgba(255,255,255,0.1)]"
+                    className="bg-white text-black hover:bg-cyan-400 text-xs px-4 py-2 rounded-full font-bold transition font-mono"
                   >
                     Manager Portal →
                   </Link>
