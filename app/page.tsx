@@ -40,13 +40,25 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white p-6 max-w-7xl mx-auto selection:bg-cyan-500 selection:text-black pb-24">
-      {/* UNIFIED CLEAN HEADER WITH MANAGER PORTAL LINK */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 border-b border-zinc-800 gap-4">
+    <main className="min-h-screen bg-black text-white p-6 max-w-7xl mx-auto selection:bg-cyan-500 selection:text-black pb-24 relative overflow-hidden">
+      {/* SEASONAL HALLOWEEN VISUALS (FLOATING BATS & PUMPKINS) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <span className="absolute top-4 left-[15%] text-2xl animate-bounce duration-[3000ms] opacity-80">🦇</span>
+        <span className="absolute top-12 right-[20%] text-3xl animate-pulse duration-[2000ms] opacity-80">🎃</span>
+        <span className="absolute top-36 left-[70%] text-xl animate-bounce duration-[4000ms] opacity-70">🦇</span>
+        <span className="absolute bottom-20 left-[5%] text-3xl opacity-75">🎃</span>
+        <span className="absolute bottom-32 right-[8%] text-2xl animate-bounce duration-[3500ms] opacity-80">🦇</span>
+      </div>
+
+      {/* UNIFIED CLEAN HEADER */}
+      <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center pb-6 border-b border-zinc-800 gap-4">
         <div>
-          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-amber-400 tracking-tight">
-            HUSTLEHUB SECUNDA 🚀
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-amber-400 tracking-tight">
+              HUSTLEHUB SECUNDA 🚀
+            </h1>
+            <span className="text-xl animate-spin duration-[5000ms]">🎃</span>
+          </div>
           <p className="text-xs text-zinc-400 mt-1 font-mono">
             Secunda's On-Demand Local Service Directory
           </p>
@@ -69,7 +81,7 @@ export default function LandingPage() {
       </div>
 
       {/* CATEGORY FILTER CHIPS */}
-      <div className="mt-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none font-mono">
+      <div className="relative z-10 mt-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none font-mono">
         {categories.map((cat) => (
           <button
             key={cat}
@@ -86,7 +98,7 @@ export default function LandingPage() {
       </div>
 
       {/* BUSINESS DIRECTORY GRID */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="relative z-10 mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBusinesses.map((biz) => {
           const whatsappPhone = biz.whatsapp || biz.phone || biz.whatsapp_number;
           const prefilledMsg = encodeURIComponent(
@@ -99,7 +111,7 @@ export default function LandingPage() {
           return (
             <div
               key={biz.id}
-              className={`bg-[#121212] border rounded-[24px] p-6 flex flex-col justify-between transition ${
+              className={`bg-[#121212] border rounded-[24px] p-6 flex flex-col justify-between transition relative overflow-hidden ${
                 biz.is_special
                   ? "border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
                   : "border-zinc-800 hover:border-cyan-500/40"
@@ -117,7 +129,10 @@ export default function LandingPage() {
                   )}
                 </div>
 
-                <h2 className="text-xl font-black mt-3 text-white">{biz.name}</h2>
+                <h2 className="text-xl font-black mt-3 text-white flex items-center justify-between">
+                  {biz.name}
+                  <span className="text-xs opacity-40">🦇</span>
+                </h2>
                 <p className="text-xs text-zinc-400 mt-1 line-clamp-2">
                   {biz.description || "Top rated local service provider in Secunda."}
                 </p>
@@ -160,9 +175,10 @@ export default function LandingPage() {
       </div>
 
       {/* FLOATING "REQUEST A SERVICE" BANNER */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-xl bg-black/90 border border-cyan-500/40 rounded-full px-6 py-3 flex items-center justify-between shadow-[0_0_25px_rgba(6,182,212,0.3)] backdrop-blur-md">
-        <span className="text-xs font-mono text-zinc-300 truncate">
-          Can't find a trade or service in Secunda?
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-xl bg-black/90 border border-cyan-500/40 rounded-full px-6 py-3 flex items-center justify-between shadow-[0_0_25px_rgba(6,182,212,0.3)] backdrop-blur-md z-30">
+        <span className="text-xs font-mono text-zinc-300 truncate flex items-center gap-1.5">
+          <span>🎃</span>
+          <span>Can't find a trade or service in Secunda?</span>
         </span>
         <a
           href="https://wa.me/27725023999?text=Hi%20HustleHub!%20I%20am%20looking%20for%20a%20specific%20service%20in%20Secunda:"
