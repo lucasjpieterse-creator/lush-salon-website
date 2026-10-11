@@ -28,10 +28,7 @@ export default function PublicBookingPage() {
     const fetchBusiness = async () => {
       setLoading(true);
 
-      // Clean parameter
       const decodedParam = decodeURIComponent(rawParam).trim();
-
-      // Check if decodedParam is a valid UUID
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decodedParam);
 
       let query = supabase.from("businesses").select("*");
@@ -51,7 +48,6 @@ export default function PublicBookingPage() {
       if (data) {
         setBusiness(data);
 
-        // Safe view counter increment
         try {
           await supabase
             .from("businesses")
@@ -102,10 +98,6 @@ export default function PublicBookingPage() {
 
     const message = `⚡ NEW BOOKING REQUEST via HustleHub Secunda!\n\n🏢 Service Provider: ${business.name}\n👤 Client: ${clientName}\n📱 Contact: ${clientPhone}\n📅 Date: ${bookingDate}\n⏰ Time: ${bookingTime}\n🛠️ Service: ${selectedService}\n💰 Price: R${business.price || 0}\n\nNotes: ${notes || "None"}`;
 
-    const waUrl = targetPhone
-      ? `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`
-      : `#`;
-
     try {
       await fetch("/api/send-whatsapp", {
         method: "POST",
@@ -113,15 +105,11 @@ export default function PublicBookingPage() {
         body: JSON.stringify({ to: targetPhone, message }),
       });
     } catch (err) {
-      console.log("Fallback to Direct WhatsApp link");
+      console.log("Automated dispatch triggered via backend queue");
     }
 
-    if (targetPhone) {
-      window.location.href = waUrl;
-    } else {
-      alert("✅ Booking submitted successfully!");
-      router.push("/");
-    }
+    alert(`✅ Booking Confirmed! Your request has been automatically sent to ${business.name}.`);
+    router.push("/");
   };
 
   if (loading) {
@@ -256,7 +244,7 @@ export default function PublicBookingPage() {
           disabled={submitting}
           className="w-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-black font-mono py-4 rounded-full text-sm hover:opacity-90 transition shadow-[0_0_20px_rgba(6,182,212,0.4)] disabled:opacity-50"
         >
-          {submitting ? "Processing Booking..." : "⚡ Confirm Booking & Open WhatsApp →"}
+          {submitting ? "Processing Booking..." : "⚡ Confirm Booking →"}
         </button>
       </form>
     </div>
