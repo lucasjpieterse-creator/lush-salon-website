@@ -41,8 +41,8 @@ export default function LandingPage() {
 
   return (
     <main className="min-h-screen bg-black text-white p-6 max-w-7xl mx-auto selection:bg-cyan-500 selection:text-black pb-24">
-      {/* HEADER */}
-      <div className="flex justify-between items-center pb-6 border-b border-zinc-800">
+      {/* UNIFIED CLEAN HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 border-b border-zinc-800 gap-4">
         <div>
           <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-amber-400 tracking-tight">
             HUSTLEHUB SECUNDA 🚀
@@ -51,12 +51,15 @@ export default function LandingPage() {
             Secunda's On-Demand Local Service Directory
           </p>
         </div>
-        <Link
-          href="/join"
-          className="text-xs bg-white text-black px-5 py-2.5 rounded-full font-bold hover:bg-cyan-400 transition shadow-[0_0_15px_rgba(255,255,255,0.2)]"
-        >
-          + List Your Hustle
-        </Link>
+
+        <div className="flex items-center gap-3 font-mono">
+          <Link
+            href="/join"
+            className="text-xs bg-cyan-400 text-black px-5 py-2.5 rounded-full font-black hover:bg-cyan-300 transition shadow-[0_0_15px_rgba(6,182,212,0.3)]"
+          >
+            + Add Hustle
+          </Link>
+        </div>
       </div>
 
       {/* CATEGORY FILTER CHIPS */}
