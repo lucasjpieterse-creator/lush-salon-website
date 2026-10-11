@@ -47,7 +47,7 @@ export default function LandingPage() {
     <main className="min-h-screen bg-black text-white p-6 max-w-7xl mx-auto selection:bg-cyan-500 selection:text-black pb-24 relative overflow-hidden">
       {/* FULLY AUTOMATED SEASONAL OVERLAY - ALWAYS ON TOP (z-50) */}
       <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-        {/* TOP RIGHT GLOWING ELEMENT (e.g. Flower 🌸 in Spring, Pumpkin 🎃 in Halloween) */}
+        {/* TOP RIGHT GLOWING ELEMENT */}
         <div className="absolute top-4 right-4 text-4xl sm:text-5xl animate-season-glow">
           {theme.cornerEmojiTopRight}
         </div>
@@ -57,7 +57,7 @@ export default function LandingPage() {
           {theme.cornerEmojiBottomLeft}
         </div>
 
-        {/* FLYING ELEMENT 1 (e.g. Bee 🐝 in Spring, Bat 🦇 in Halloween, Sleigh 🛷 in Xmas) */}
+        {/* FLYING ELEMENT 1 */}
         <div className="absolute top-[15%] animate-fly-1">
           <span className="inline-block text-2xl sm:text-3xl animate-bob-wing">{theme.flyingEmoji}</span>
         </div>
@@ -73,7 +73,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* DYNAMIC SEASONAL KEYFRAME ANIMATIONS */}
+      {/* DYNAMIC SEASONAL KEYFRAME ANIMATIONS WITH FORWARD-FACING FLIP */}
       <style jsx global>{`
         @keyframes seasonPulse {
           0%, 100% {
@@ -88,10 +88,10 @@ export default function LandingPage() {
 
         @keyframes bobWing {
           0%, 100% {
-            transform: translateY(0px) rotate(0deg);
+            transform: scaleX(-1) translateY(0px) rotate(0deg);
           }
           50% {
-            transform: translateY(-8px) rotate(6deg);
+            transform: scaleX(-1) translateY(-8px) rotate(6deg);
           }
         }
 
