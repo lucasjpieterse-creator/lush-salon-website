@@ -41,24 +41,110 @@ export default function LandingPage() {
 
   return (
     <main className="min-h-screen bg-black text-white p-6 max-w-7xl mx-auto selection:bg-cyan-500 selection:text-black pb-24 relative overflow-hidden">
-      {/* SEASONAL HALLOWEEN VISUALS (FLOATING BATS & PUMPKINS) */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <span className="absolute top-4 left-[15%] text-2xl animate-bounce duration-[3000ms] opacity-80">🦇</span>
-        <span className="absolute top-12 right-[20%] text-3xl animate-pulse duration-[2000ms] opacity-80">🎃</span>
-        <span className="absolute top-36 left-[70%] text-xl animate-bounce duration-[4000ms] opacity-70">🦇</span>
-        <span className="absolute bottom-20 left-[5%] text-3xl opacity-75">🎃</span>
-        <span className="absolute bottom-32 right-[8%] text-2xl animate-bounce duration-[3500ms] opacity-80">🦇</span>
+      {/* HALLOWEEN OVERLAY - ON TOP OF EVERYTHING (z-50) */}
+      <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+        {/* TOP LEFT GLOWING PUMPKIN */}
+        <div className="absolute top-4 left-4 text-4xl sm:text-5xl animate-pumpkin-glow">
+          🎃
+        </div>
+
+        {/* BOTTOM RIGHT GLOWING PUMPKIN */}
+        <div className="absolute bottom-4 right-4 text-4xl sm:text-5xl animate-pumpkin-glow">
+          🎃
+        </div>
+
+        {/* BAT 1 - TOP FLIGHT PATH */}
+        <div className="absolute top-[12%] animate-fly-bat-1">
+          <span className="inline-block text-2xl sm:text-3xl animate-flap-wings">🦇</span>
+        </div>
+
+        {/* BAT 2 - MIDDLE FLIGHT PATH */}
+        <div className="absolute top-[45%] animate-fly-bat-2">
+          <span className="inline-block text-3xl sm:text-4xl animate-flap-wings">🦇</span>
+        </div>
+
+        {/* BAT 3 - LOWER FLIGHT PATH */}
+        <div className="absolute top-[75%] animate-fly-bat-3">
+          <span className="inline-block text-2xl sm:text-3xl animate-flap-wings">🦇</span>
+        </div>
       </div>
 
-      {/* UNIFIED CLEAN HEADER */}
-      <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center pb-6 border-b border-zinc-800 gap-4">
+      {/* CUSTOM CSS FOR GLOW & FLAP ANIMATIONS */}
+      <style jsx global>{`
+        @keyframes pumpkinPulse {
+          0%, 100% {
+            filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.8)) drop-shadow(0 0 25px rgba(249, 115, 22, 0.5));
+            transform: scale(1);
+          }
+          50% {
+            filter: drop-shadow(0 0 20px rgba(249, 115, 22, 1)) drop-shadow(0 0 40px rgba(249, 115, 22, 0.8));
+            transform: scale(1.08);
+          }
+        }
+
+        @keyframes flapWings {
+          0%, 100% {
+            transform: scaleX(1) translateY(0px);
+          }
+          50% {
+            transform: scaleX(-0.8) translateY(-6px);
+          }
+        }
+
+        @keyframes flyAcross1 {
+          0% {
+            left: -10%;
+          }
+          100% {
+            left: 110%;
+          }
+        }
+
+        @keyframes flyAcross2 {
+          0% {
+            left: -15%;
+          }
+          100% {
+            left: 115%;
+          }
+        }
+
+        @keyframes flyAcross3 {
+          0% {
+            left: -20%;
+          }
+          100% {
+            left: 120%;
+          }
+        }
+
+        .animate-pumpkin-glow {
+          animation: pumpkinPulse 2.5s infinite ease-in-out;
+        }
+
+        .animate-flap-wings {
+          animation: flapWings 0.35s infinite ease-in-out;
+        }
+
+        .animate-fly-bat-1 {
+          animation: flyAcross1 12s infinite linear;
+        }
+
+        .animate-fly-bat-2 {
+          animation: flyAcross2 8s infinite linear 2s;
+        }
+
+        .animate-fly-bat-3 {
+          animation: flyAcross3 15s infinite linear 5s;
+        }
+      `}</style>
+
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 border-b border-zinc-800 gap-4 relative z-10">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-amber-400 tracking-tight">
-              HUSTLEHUB SECUNDA 🚀
-            </h1>
-            <span className="text-xl animate-spin duration-[5000ms]">🎃</span>
-          </div>
+          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-amber-400 tracking-tight">
+            HUSTLEHUB SECUNDA 🚀
+          </h1>
           <p className="text-xs text-zinc-400 mt-1 font-mono">
             Secunda's On-Demand Local Service Directory
           </p>
@@ -81,7 +167,7 @@ export default function LandingPage() {
       </div>
 
       {/* CATEGORY FILTER CHIPS */}
-      <div className="relative z-10 mt-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none font-mono">
+      <div className="mt-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none font-mono relative z-10">
         {categories.map((cat) => (
           <button
             key={cat}
@@ -98,7 +184,7 @@ export default function LandingPage() {
       </div>
 
       {/* BUSINESS DIRECTORY GRID */}
-      <div className="relative z-10 mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
         {filteredBusinesses.map((biz) => {
           const whatsappPhone = biz.whatsapp || biz.phone || biz.whatsapp_number;
           const prefilledMsg = encodeURIComponent(
@@ -111,7 +197,7 @@ export default function LandingPage() {
           return (
             <div
               key={biz.id}
-              className={`bg-[#121212] border rounded-[24px] p-6 flex flex-col justify-between transition relative overflow-hidden ${
+              className={`bg-[#121212] border rounded-[24px] p-6 flex flex-col justify-between transition ${
                 biz.is_special
                   ? "border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
                   : "border-zinc-800 hover:border-cyan-500/40"
@@ -129,10 +215,7 @@ export default function LandingPage() {
                   )}
                 </div>
 
-                <h2 className="text-xl font-black mt-3 text-white flex items-center justify-between">
-                  {biz.name}
-                  <span className="text-xs opacity-40">🦇</span>
-                </h2>
+                <h2 className="text-xl font-black mt-3 text-white">{biz.name}</h2>
                 <p className="text-xs text-zinc-400 mt-1 line-clamp-2">
                   {biz.description || "Top rated local service provider in Secunda."}
                 </p>
@@ -175,10 +258,9 @@ export default function LandingPage() {
       </div>
 
       {/* FLOATING "REQUEST A SERVICE" BANNER */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-xl bg-black/90 border border-cyan-500/40 rounded-full px-6 py-3 flex items-center justify-between shadow-[0_0_25px_rgba(6,182,212,0.3)] backdrop-blur-md z-30">
-        <span className="text-xs font-mono text-zinc-300 truncate flex items-center gap-1.5">
-          <span>🎃</span>
-          <span>Can't find a trade or service in Secunda?</span>
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-xl bg-black/90 border border-cyan-500/40 rounded-full px-6 py-3 flex items-center justify-between shadow-[0_0_25px_rgba(6,182,212,0.3)] backdrop-blur-md z-40">
+        <span className="text-xs font-mono text-zinc-300 truncate">
+          Can't find a trade or service in Secunda?
         </span>
         <a
           href="https://wa.me/27725023999?text=Hi%20HustleHub!%20I%20am%20looking%20for%20a%20specific%20service%20in%20Secunda:"
