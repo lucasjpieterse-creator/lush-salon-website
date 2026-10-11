@@ -49,7 +49,6 @@ export default function ManagerPortal() {
     setLoading(true);
     const cleanQuery = searchQuery.trim();
 
-    // Query business by Phone / WhatsApp or Name
     const { data } = await supabase
       .from("businesses")
       .select("*")
@@ -75,16 +74,68 @@ export default function ManagerPortal() {
     setSearchQuery("");
   };
 
+  // Booking Action Handlers
+  const handleBookingAction = async (booking: any, action: "confirm" | "reschedule" | "decline" | "delete") => {
+    if (action === "delete") {
+      if (!confirm(`Are you sure you want to delete the booking for ${booking.client_name}?`)) return;
+      
+      const { error } = await supabase.from("bookings").delete().eq("id", booking.id);
+      if (!error) {
+        setBookings(bookings.filter((b) => b.id !== booking.id));
+      } else {
+        alert("Delete failed: " + error.message);
+      }
+      return;
+    }
+
+    const newStatus = action === "confirm" ? "confirmed" : action === "reschedule" ? "rescheduled" : "declined";
+    
+    // Update Supabase Database
+    const { error } = await supabase.from("bookings").update({ status: newStatus }).eq("id", booking.id);
+    
+    if (error) {
+      alert("Status update failed: " + error.message);
+      return;
+    }
+
+    // Update Local State
+    setBookings(bookings.map((b) => (b.id === booking.id ? { ...b, status: newStatus } : b)));
+
+    // Generate Tailored WhatsApp Reply to Client
+    const clientPhone = (booking.client_phone || "").replace(/[^0-9]/g, "");
+    let textMessage = "";
+
+    if (action === "confirm") {
+      textMessage = `Hi ${booking.client_name}! ⚡ Your booking for "${booking.service_name || "Service"}" on ${booking.booking_date} at ${booking.booking_time} with ${business.name} is CONFIRMED! See you then.`;
+    } else if (action === "reschedule") {
+      textMessage = `Hi ${booking.client_name}! Regarding your booking for "${booking.service_name || "Service"}" with ${business.name}: We need to reschedule this appointment. Could you please reply with another date or time that works for you?`;
+    } else if (action === "decline") {
+      textMessage = `Hi ${booking.client_name}! Unfortunately, ${business.name} is unable to accept your booking request for ${booking.booking_date} at ${booking.booking_time}. Apologies for any inconvenience!`;
+    }
+
+    if (clientPhone && textMessage) {
+      const whatsappUrl = `https://wa.me/${clientPhone}?text=${encodeURIComponent(textMessage)}`;
+      window.open(whatsappUrl, "_blank");
+    }
+  };
+
+  // Metrics Calculations
+  const todayStr = new Date().toISOString().split("T")[0];
+  const todayBookingsCount = bookings.filter((b) => b.booking_date === todayStr).length;
+  const totalRevenue = bookings
+    .filter((b) => b.status !== "declined")
+    .reduce((sum, b) => sum + (Number(b.service_price) || Number(b.price) || 0), 0);
+
   return (
     <main className="min-h-screen bg-black text-white p-6 max-w-5xl mx-auto font-mono selection:bg-cyan-500 selection:text-black pb-24">
-      {/* HEADER */}
+      {/* TOP HEADER */}
       <div className="flex items-center justify-between pb-6 border-b border-zinc-800">
         <div>
           <Link href="/" className="text-xs text-cyan-400 hover:underline">
             ← Back to Directory
           </Link>
           <h1 className="text-2xl font-black text-white mt-2">💼 Manager Portal</h1>
-          <p className="text-xs text-zinc-400 mt-1">Manage your business bookings & incoming enquiries</p>
+          <p className="text-xs text-zinc-400 mt-1">Manage your business bookings & client communications</p>
         </div>
 
         {business && (
@@ -135,6 +186,29 @@ export default function ManagerPortal() {
       ) : (
         /* ACTIVE MANAGER DASHBOARD */
         <div className="mt-8 space-y-8">
+          {/* RELEVANT MANAGER METRICS GRID */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-[#121212] border border-zinc-800 rounded-2xl p-4 text-center">
+              <span className="text-[10px] text-zinc-500 block uppercase font-bold">Est. Total Revenue</span>
+              <span className="text-2xl font-black text-emerald-400">R{totalRevenue}</span>
+            </div>
+
+            <div className="bg-[#121212] border border-zinc-800 rounded-2xl p-4 text-center">
+              <span className="text-[10px] text-zinc-500 block uppercase font-bold">Today's Bookings</span>
+              <span className="text-2xl font-black text-amber-400">{todayBookingsCount}</span>
+            </div>
+
+            <div className="bg-[#121212] border border-zinc-800 rounded-2xl p-4 text-center">
+              <span className="text-[10px] text-zinc-500 block uppercase font-bold">Total Bookings</span>
+              <span className="text-2xl font-black text-cyan-400">{bookings.length}</span>
+            </div>
+
+            <div className="bg-[#121212] border border-zinc-800 rounded-2xl p-4 text-center">
+              <span className="text-[10px] text-zinc-500 block uppercase font-bold">Directory Views</span>
+              <span className="text-2xl font-black text-fuchsia-400">{business.views || 0}</span>
+            </div>
+          </div>
+
           {/* BUSINESS OVERVIEW CARD */}
           <div className="bg-[#121212] border border-zinc-800 rounded-[24px] p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -143,11 +217,6 @@ export default function ManagerPortal() {
               </span>
               <h2 className="text-2xl font-black text-white mt-2">{business.name}</h2>
               <p className="text-xs text-zinc-400 mt-1">{business.description}</p>
-            </div>
-
-            <div className="bg-black border border-zinc-800 rounded-2xl p-4 text-center shrink-0">
-              <span className="text-[10px] text-zinc-500 block uppercase font-bold">Total Bookings</span>
-              <span className="text-2xl font-black text-cyan-400">{bookings.length}</span>
             </div>
           </div>
 
@@ -163,51 +232,95 @@ export default function ManagerPortal() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4">
-                {bookings.map((b) => (
-                  <div
-                    key={b.id}
-                    className="bg-[#121212] border border-zinc-800 hover:border-cyan-500/40 rounded-[20px] p-6 space-y-4 transition"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-3">
-                      <div>
-                        <span className="text-lg font-black text-white">{b.client_name}</span>
-                        <a
-                          href={`https://wa.me/${(b.client_phone || "").replace(/[^0-9]/g, "")}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="ml-3 text-xs text-emerald-400 hover:underline font-bold"
+                {bookings.map((b) => {
+                  const statusColor =
+                    b.status === "confirmed"
+                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                      : b.status === "rescheduled"
+                      ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                      : b.status === "declined"
+                      ? "bg-red-500/10 text-red-400 border-red-500/30"
+                      : "bg-cyan-500/10 text-cyan-400 border-cyan-500/30";
+
+                  return (
+                    <div
+                      key={b.id}
+                      className="bg-[#121212] border border-zinc-800 hover:border-cyan-500/40 rounded-[20px] p-6 space-y-4 transition"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-black text-white">{b.client_name}</span>
+                            <span className={`text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full border ${statusColor}`}>
+                              {b.status || "pending"}
+                            </span>
+                          </div>
+                          <a
+                            href={`https://wa.me/${(b.client_phone || "").replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-emerald-400 hover:underline font-bold mt-1 inline-block"
+                          >
+                            💬 WhatsApp Client: {b.client_phone}
+                          </a>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-xs font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
+                            R{b.service_price || b.price || 0}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <span className="text-zinc-500 block font-bold">DATE & TIME:</span>
+                          <span className="text-zinc-200">{b.booking_date} at {b.booking_time}</span>
+                        </div>
+
+                        <div>
+                          <span className="text-zinc-500 block font-bold">SELECTED SERVICES:</span>
+                          <span className="text-cyan-400 font-bold">{b.service_name || "Standard Service"}</span>
+                        </div>
+                      </div>
+
+                      {b.notes && (
+                        <div className="bg-black border border-zinc-800/80 rounded-xl p-3 text-xs text-zinc-300">
+                          <span className="text-zinc-500 block text-[10px] font-bold">CLIENT NOTES / SPECIAL REQUESTS:</span>
+                          <p className="mt-0.5 italic">"{b.notes}"</p>
+                        </div>
+                      )}
+
+                      {/* ACTION BUTTONS (CONFIRM, RESCHEDULE, DECLINE, DELETE) */}
+                      <div className="pt-2 flex flex-wrap items-center gap-2 font-mono">
+                        <button
+                          onClick={() => handleBookingAction(b, "confirm")}
+                          className="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3.5 py-2 rounded-xl font-bold hover:bg-emerald-500 hover:text-black transition"
                         >
-                          💬 WhatsApp: {b.client_phone}
-                        </a>
-                      </div>
-
-                      <div className="text-right">
-                        <span className="text-xs font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-                          R{b.service_price || b.price || 0}
-                        </span>
+                          ✅ Confirm & WhatsApp
+                        </button>
+                        <button
+                          onClick={() => handleBookingAction(b, "reschedule")}
+                          className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3.5 py-2 rounded-xl font-bold hover:bg-amber-500 hover:text-black transition"
+                        >
+                          📅 Reschedule
+                        </button>
+                        <button
+                          onClick={() => handleBookingAction(b, "decline")}
+                          className="text-xs bg-red-500/20 text-red-400 border border-red-500/30 px-3.5 py-2 rounded-xl font-bold hover:bg-red-500 hover:text-black transition"
+                        >
+                          ❌ Decline
+                        </button>
+                        <button
+                          onClick={() => handleBookingAction(b, "delete")}
+                          className="text-xs bg-zinc-900 text-zinc-500 border border-zinc-800 px-3.5 py-2 rounded-xl font-bold hover:text-red-400 hover:border-red-500/40 transition ml-auto"
+                        >
+                          🗑️ Delete
+                        </button>
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                      <div>
-                        <span className="text-zinc-500 block font-bold">DATE & TIME:</span>
-                        <span className="text-zinc-200">{b.booking_date} at {b.booking_time}</span>
-                      </div>
-
-                      <div>
-                        <span className="text-zinc-500 block font-bold">SELECTED SERVICES:</span>
-                        <span className="text-cyan-400 font-bold">{b.service_name || "Standard Service"}</span>
-                      </div>
-                    </div>
-
-                    {b.notes && (
-                      <div className="bg-black border border-zinc-800/80 rounded-xl p-3 text-xs text-zinc-300">
-                        <span className="text-zinc-500 block text-[10px] font-bold">CLIENT NOTES / SPECIAL REQUESTS:</span>
-                        <p className="mt-0.5 italic">"{b.notes}"</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
