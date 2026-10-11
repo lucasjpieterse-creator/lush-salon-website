@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useParams, useRouter } from "next/navigation";
+import { getCurrentSeasonTheme, ThemeConfig } from "@/lib/theme";
 import Link from "next/link";
+
+interface ServiceItem {
+  id: string;
+  name: string;
+  price: number;
+}
 
 export default function PublicBookingPage() {
   const params = useParams();
@@ -13,16 +20,19 @@ export default function PublicBookingPage() {
   const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [theme, setTheme] = useState<ThemeConfig | null>(null);
 
   // Form State
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("10:00");
-  const [selectedService, setSelectedService] = useState<string>("Standard Service");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
+    setTheme(getCurrentSeasonTheme());
+
     if (!rawParam) return;
 
     const fetchBusiness = async () => {
@@ -48,6 +58,10 @@ export default function PublicBookingPage() {
       if (data) {
         setBusiness(data);
 
+        // Pre-select default standard service
+        const initialService = data.category ? `${data.category} Standard Service` : "Standard Service";
+        setSelectedServices([initialService]);
+
         try {
           await supabase
             .from("businesses")
@@ -64,8 +78,35 @@ export default function PublicBookingPage() {
     fetchBusiness();
   }, [rawParam]);
 
+  // Build service list from database array or fallback service options
+  const availableServices: ServiceItem[] = business?.services && Array.isArray(business.services) && business.services.length > 0
+    ? business.services
+    : [
+        { id: "s1", name: `${business?.category || "General"} Standard Service`, price: business?.price || 150 },
+        { id: "s2", name: "Premium Express Care", price: (business?.price || 150) + 50 },
+        { id: "s3", name: "Full VIP Treatment Package", price: (business?.price || 150) * 2 },
+      ];
+
+  const toggleService = (serviceName: string) => {
+    if (selectedServices.includes(serviceName)) {
+      if (selectedServices.length === 1) return; // keep at least 1 selected
+      setSelectedServices(selectedServices.filter((s) => s !== serviceName));
+    } else {
+      setSelectedServices([...selectedServices, serviceName]);
+    }
+  };
+
+  const calculatedTotal = availableServices
+    .filter((s) => selectedServices.includes(s.name))
+    .reduce((sum, item) => sum + item.price, 0);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (selectedServices.length === 0) {
+      alert("Please select at least one service before proceeding.");
+      return;
+    }
+
     setSubmitting(true);
 
     const bookingPayload = {
@@ -74,9 +115,9 @@ export default function PublicBookingPage() {
       client_phone: clientPhone,
       booking_date: bookingDate,
       booking_time: bookingTime,
-      service_name: selectedService,
-      service_price: business.price || 0,
-      price: business.price || 0,
+      service_name: selectedServices.join(", "),
+      service_price: calculatedTotal,
+      price: calculatedTotal,
       notes,
       status: "pending",
     };
@@ -96,7 +137,7 @@ export default function PublicBookingPage() {
       ""
     ).replace(/[^0-9]/g, "");
 
-    const message = `⚡ NEW BOOKING REQUEST via HustleHub Secunda!\n\n🏢 Service Provider: ${business.name}\n👤 Client: ${clientName}\n📱 Contact: ${clientPhone}\n📅 Date: ${bookingDate}\n⏰ Time: ${bookingTime}\n🛠️ Service: ${selectedService}\n💰 Price: R${business.price || 0}\n\nNotes: ${notes || "None"}`;
+    const message = `⚡ NEW BOOKING REQUEST via HustleHub Secunda!\n\n🏢 Service Provider: ${business.name}\n👤 Client: ${clientName}\n📱 Contact: ${clientPhone}\n📅 Date: ${bookingDate}\n⏰ Time: ${bookingTime}\n🛠️ Selected Services:\n- ${selectedServices.join("\n- ")}\n💰 Total Price: R${calculatedTotal}\n\nNotes: ${notes || "None"}`;
 
     try {
       await fetch("/api/send-whatsapp", {
@@ -108,11 +149,11 @@ export default function PublicBookingPage() {
       console.log("Automated dispatch triggered via backend queue");
     }
 
-    alert(`✅ Booking Confirmed! Your request has been automatically sent to ${business.name}.`);
+    alert(`✅ Booking Confirmed! Your request for R${calculatedTotal} has been automatically dispatched to ${business.name}.`);
     router.push("/");
   };
 
-  if (loading) {
+  if (loading || !theme) {
     return (
       <div className="min-h-screen bg-black text-cyan-400 p-10 font-mono font-bold flex flex-col items-center justify-center">
         <div className="text-2xl animate-pulse">⚡ LOADING BOOKING PORTAL...</div>
@@ -133,9 +174,33 @@ export default function PublicBookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 max-w-3xl mx-auto font-sans selection:bg-cyan-500 selection:text-black pb-20">
+    <div className="min-h-screen bg-black text-white p-6 max-w-3xl mx-auto font-sans selection:bg-cyan-500 selection:text-black pb-24 relative overflow-hidden">
+      {/* SEASONAL OVERLAY */}
+      <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+        <div className="absolute top-4 right-4 text-4xl animate-season-glow">
+          {theme.cornerEmojiTopRight}
+        </div>
+        <div className="absolute bottom-4 left-4 text-4xl animate-season-glow">
+          {theme.cornerEmojiBottomLeft}
+        </div>
+      </div>
+
+      <style jsx global>{`
+        @keyframes seasonPulse {
+          0%, 100% {
+            filter: drop-shadow(0 0 10px rgba(${theme.glowColorRgb}, 0.8));
+            transform: scale(1);
+          }
+          50% {
+            filter: drop-shadow(0 0 20px rgba(${theme.glowColorRgb}, 1));
+            transform: scale(1.08);
+          }
+        }
+        .animate-season-glow { animation: seasonPulse 2.5s infinite ease-in-out; }
+      `}</style>
+
       {/* HEADER */}
-      <div className="pb-6 border-b border-zinc-800">
+      <div className="pb-6 border-b border-zinc-800 relative z-10">
         <Link href="/" className="text-xs font-mono text-cyan-400 hover:underline">
           ← Back to Secunda Directory
         </Link>
@@ -144,14 +209,15 @@ export default function PublicBookingPage() {
             <span className="text-[10px] font-mono font-bold bg-cyan-500/10 text-cyan-400 px-3 py-1 rounded-full border border-cyan-500/20">
               {business.category || "Local Service"}
             </span>
-            <h1 className="text-3xl font-black mt-2 text-white">{business.name}</h1>
+            <h1 className="text-3xl font-black mt-2 text-white flex items-center gap-2">
+              <span>{business.name}</span>
+              <span className="text-lg">{theme.primaryEmoji}</span>
+            </h1>
           </div>
-          {business.price > 0 && (
-            <div className="text-right">
-              <span className="text-[10px] text-zinc-500 font-mono uppercase font-bold block">Starting At</span>
-              <span className="text-2xl font-black text-emerald-400 font-mono">R{business.price}</span>
-            </div>
-          )}
+          <div className="text-right">
+            <span className="text-[10px] text-zinc-500 font-mono uppercase font-bold block">Selected Total</span>
+            <span className="text-2xl font-black text-emerald-400 font-mono">R{calculatedTotal}</span>
+          </div>
         </div>
         <p className="text-xs text-zinc-400 mt-2 font-mono">
           {business.description || "Top rated local service provider in Secunda."}
@@ -159,10 +225,56 @@ export default function PublicBookingPage() {
       </div>
 
       {/* BOOKING FORM */}
-      <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+      <form onSubmit={handleSubmit} className="mt-8 space-y-6 relative z-10">
+        {/* SECTION 1: SELECT MULTIPLE SERVICES */}
+        <div className="bg-[#121212] border border-zinc-800 rounded-[24px] p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-cyan-400 font-mono uppercase tracking-wider">
+              1. Select Services (Multiple Selection Active)
+            </h2>
+            <span className="text-[10px] font-mono text-zinc-400 bg-zinc-900 px-3 py-1 rounded-full border border-zinc-800">
+              {selectedServices.length} Selected
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            {availableServices.map((service) => {
+              const isSelected = selectedServices.includes(service.name);
+              return (
+                <div
+                  key={service.id || service.name}
+                  onClick={() => toggleService(service.name)}
+                  className={`cursor-pointer border rounded-2xl p-4 flex items-center justify-between transition ${
+                    isSelected
+                      ? "bg-cyan-500/10 border-cyan-400 text-white shadow-[0_0_15px_rgba(6,182,212,0.15)]"
+                      : "bg-black border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-xs font-mono transition ${
+                        isSelected
+                          ? "bg-cyan-400 text-black"
+                          : "border border-zinc-700 bg-zinc-900"
+                      }`}
+                    >
+                      {isSelected ? "✓" : ""}
+                    </div>
+                    <span className="text-sm font-bold">{service.name}</span>
+                  </div>
+                  <span className="text-sm font-black font-mono text-emerald-400">
+                    R{service.price}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* SECTION 2: DATE & TIME */}
         <div className="bg-[#121212] border border-zinc-800 rounded-[24px] p-6 space-y-4">
           <h2 className="text-sm font-black text-cyan-400 font-mono uppercase tracking-wider">
-            1. Select Date & Time
+            2. Select Date & Time
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -196,9 +308,10 @@ export default function PublicBookingPage() {
           </div>
         </div>
 
+        {/* SECTION 3: CLIENT CONTACT DETAILS */}
         <div className="bg-[#121212] border border-zinc-800 rounded-[24px] p-6 space-y-4">
           <h2 className="text-sm font-black text-cyan-400 font-mono uppercase tracking-wider">
-            2. Client Contact Details
+            3. Client Contact Details
           </h2>
 
           <div className="space-y-3">
@@ -244,7 +357,7 @@ export default function PublicBookingPage() {
           disabled={submitting}
           className="w-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-black font-mono py-4 rounded-full text-sm hover:opacity-90 transition shadow-[0_0_20px_rgba(6,182,212,0.4)] disabled:opacity-50"
         >
-          {submitting ? "Processing Booking..." : "⚡ Confirm Booking →"}
+          {submitting ? "Processing Booking..." : `⚡ Confirm Booking (R${calculatedTotal}) →`}
         </button>
       </form>
     </div>
