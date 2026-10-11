@@ -1,279 +1,258 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
-export default function BookingPage() {
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+
+export default function PublicBookingPage() {
   const params = useParams();
-  const rawSlug = params.slug as string | string[];
-  const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
+  const router = useRouter();
+  const slug = params?.slug as string;
 
   const [business, setBusiness] = useState<any>(null);
-  const [services, setServices] = useState<any[]>([]);
-  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
-  const [paying, setPaying] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState({
-    client_name: "",
-    client_phone: "",
-    booking_date: "",
-    booking_time: "",
-  });
+  // Form State
+  const [clientName, setClientName] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
+  const [bookingDate, setBookingDate] = useState("");
+  const [bookingTime, setBookingTime] = useState("10:00");
+  const [selectedService, setSelectedService] = useState<string>("Standard Service");
+  const [notes, setNotes] = useState("");
 
   useEffect(() => {
     if (!slug) return;
-    (async () => {
-      const { data: biz } = await supabase.from("businesses").select("*").eq("slug", slug).single();
-      if (!biz) { setLoading(false); return; }
-      setBusiness(biz);
 
-      // --- CYBERPUNK CEO VIEW COUNTER ---
-      supabase.rpc("increment_views", { row_id: biz.id }).then(({ error }) => {
-        if (error) {
-          supabase.from("businesses").update({ views: (biz.views || 0) + 1 }).eq("id", biz.id).then(()=>{});
+    const fetchBusiness = async () => {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("businesses")
+        .select("*")
+        .or(`slug.eq.${slug},id.eq.${slug}`)
+        .single();
+
+      if (data) {
+        setBusiness(data);
+
+        // Increment Views Count safely without TypeScript RPC errors
+        try {
+          await supabase.rpc("increment_views", { biz_id: data.id });
+        } catch (e) {
+          // Fallback view counter update if RPC is missing
+          await supabase
+            .from("businesses")
+            .update({ views: (data.views || 0) + 1 })
+            .eq("id", data.id);
         }
-      });
-      supabase.from("business_views").insert({ business_id: biz.id }).then(()=>{});
-
-      const { data: servs } = await supabase.from("services").select("*").eq("business_id", biz.id);
-      setServices(servs || []);
-      // Default select the first service if available
-      if (servs && servs[0]) {
-        setSelectedServiceIds([servs[0].id]);
       }
+
       setLoading(false);
-    })();
+    };
+
+    fetchBusiness();
   }, [slug]);
 
-  // Helper function to call the background WhatsApp API route
-  const sendAutomatedWhatsApp = async (recipientPhone: string, messageText: string) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    const bookingPayload = {
+      business_id: business.id,
+      client_name: clientName,
+      client_phone: clientPhone,
+      booking_date: bookingDate,
+      booking_time: bookingTime,
+      service_name: selectedService,
+      service_price: business.price || 0,
+      price: business.price || 0,
+      notes,
+      status: "pending",
+    };
+
+    const { data: insertedBooking, error } = await supabase
+      .from("bookings")
+      .insert([bookingPayload])
+      .select()
+      .single();
+
+    if (error) {
+      alert("Booking failed: " + error.message);
+      setSubmitting(false);
+      return;
+    }
+
+    // Format WhatsApp Confirmation Message
+    const targetPhone = (
+      business.whatsapp_number ||
+      business.whatsapp ||
+      business.phone ||
+      ""
+    ).replace(/[^0-9]/g, "");
+
+    const message = `⚡ NEW BOOKING REQUEST via HustleHub Secunda!\n\n🏢 Service Provider: ${business.name}\n👤 Client: ${clientName}\n📱 Contact: ${clientPhone}\n📅 Date: ${bookingDate}\n⏰ Time: ${bookingTime}\n🛠️ Service: ${selectedService}\n💰 Price: R${business.price || 0}\n\nNotes: ${notes || "None"}`;
+
+    const waUrl = targetPhone
+      ? `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`
+      : `#`;
+
+    // Trigger Automated WhatsApp API Dispatch if available
     try {
       await fetch("/api/send-whatsapp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: recipientPhone, message: messageText }),
+        body: JSON.stringify({ to: targetPhone, message }),
       });
     } catch (err) {
-      console.error("WhatsApp dispatch failed:", err);
+      console.log("Fallback to Direct WhatsApp link");
     }
-  };
 
-  const toggleServiceSelection = (serviceId: string) => {
-    if (selectedServiceIds.includes(serviceId)) {
-      // Don't allow deselecting if it's the only one selected
-      if (selectedServiceIds.length === 1) return;
-      setSelectedServiceIds(selectedServiceIds.filter(id => id !== serviceId));
+    // Redirect client directly to WhatsApp or confirmation
+    if (targetPhone) {
+      window.location.href = waUrl;
     } else {
-      setSelectedServiceIds([...selectedServiceIds, serviceId]);
+      alert("✅ Booking submitted successfully!");
+      router.push("/");
     }
   };
 
-  // Compute selected services objects and total price
-  const selectedServicesList = services.filter(s => selectedServiceIds.includes(s.id));
-  const totalPrice = selectedServicesList.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
-  const serviceNamesString = selectedServicesList.map(s => s.name).join(" + ");
-
-  const handleBooking = async (e: any) => {
-    e.preventDefault();
-    if (selectedServiceIds.length === 0) return alert("Select at least one service");
-    if (!formData.client_name || !formData.client_phone || !formData.booking_date || !formData.booking_time) {
-      return alert("Fill all fields");
-    }
-
-    const isDepositRequired = Boolean(business.deposit_required);
-    const depositAmount = Number(business.deposit_amount || 0);
-
-    // --- REAL PAYSTACK INITIALIZATION FLOW ---
-    if (isDepositRequired && depositAmount > 0) {
-      setPaying(true);
-      try {
-        const cleanPhone = formData.client_phone.replace(/\D/g, "");
-        const res = await fetch("/api/paystack/initialize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: `${cleanPhone || "client"}@hustlehubsecunda.co.za`,
-            amount: depositAmount,
-            metadata: {
-              slug: business.slug,
-              business_id: business.id,
-              client_name: formData.client_name,
-              client_phone: formData.client_phone,
-              service_name: serviceNamesString,
-              service_price: totalPrice,
-              booking_date: formData.booking_date,
-              booking_time: formData.booking_time,
-            },
-          }),
-        });
-
-        const data = await res.json();
-        setPaying(false);
-
-        if (data.authorization_url) {
-          window.location.href = data.authorization_url;
-          return;
-        } else {
-          alert("Paystack error: " + (data.error || "Failed to initialize payment gateway."));
-          return;
-        }
-      } catch (err: any) {
-        setPaying(false);
-        alert("Payment process failed: " + err.message);
-        return;
-      }
-    }
-
-    // --- STANDARD FREE / NO-DEPOSIT BOOKING FALLBACK ---
-    const payload = {
-      business_id: business.id,
-      service_name: serviceNamesString,
-      service_price: totalPrice,
-      client_name: formData.client_name,
-      client_phone: formData.client_phone,
-      booking_date: formData.booking_date,
-      booking_time: formData.booking_time,
-      status: "pending",
-    };
-
-    const { error } = await supabase.from("bookings").insert(payload);
-    if (error) return alert("Booking failed: " + error.message);
-
-    // Format owner phone number
-    const ownerRaw = (business.whatsapp_number || business.whatsapp || business.owner_phone || business.phone || "").toString();
-    let ownerPhone = ownerRaw.trim().replace(/\D/g, "");
-    if (ownerPhone.startsWith("0")) ownerPhone = "27" + ownerPhone.slice(1);
-
-    // 1. Send automated notification to CLIENT
-    const clientMsg = `🗓️ Booking Request Received - ${business.name}\n\nServices: ${serviceNamesString} (Total: R${totalPrice})\nDate & Time: ${formData.booking_date} at ${formData.booking_time}\nStatus: Pending Confirmation\n\nHi ${formData.client_name}, your booking request has been submitted!`;
-    await sendAutomatedWhatsApp(formData.client_phone, clientMsg);
-
-    // 2. Send automated notification to OWNER
-    if (ownerPhone) {
-      const ownerMsg = `🔔 NEW MULTI-SERVICE BOOKING - ${business.name}\n\n👤 Client: ${formData.client_name}\n📱 ${formData.client_phone}\n💅 Services: ${serviceNamesString} (R${totalPrice})\n📅 Date: ${formData.booking_date} at ${formData.booking_time}\n\nManage here: https://hustlehubsecunda.co.za/manager/${business.slug}`;
-      await sendAutomatedWhatsApp(ownerPhone, ownerMsg);
-    }
-
-    setSuccess(true);
-  };
-
-  if (loading) return <div className="min-h-screen bg-black text-white p-10">Loading {slug}...</div>;
-  if (!business) return <div className="min-h-screen bg-black text-white p-10">Business not found: {slug}</div>;
-
-  const isDepositRequired = Boolean(business.deposit_required);
-  const depositAmount = Number(business.deposit_amount || 0);
-
-  if (success) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center">
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[24px] p-8 max-w-md w-full">
-          <h1 className="text-3xl font-black text-emerald-400">✅ Booked!</h1>
-          <p className="text-zinc-400 mt-3 text-sm">
-            Your booking at {business.name} for {formData.booking_date} at {formData.booking_time} is submitted. Details have been sent to your WhatsApp.
-          </p>
-          <p className="text-white font-bold mt-4">
-            {serviceNamesString} — R{totalPrice}
-          </p>
-          <button onClick={() => setSuccess(false)} className="mt-6 bg-white text-black w-full py-3 rounded-full font-bold text-sm">
-            Book Another
-          </button>
-        </div>
+      <div className="min-h-screen bg-black text-cyan-400 p-10 font-mono font-bold flex flex-col items-center justify-center">
+        <div className="text-2xl animate-pulse">⚡ LOADING BOOKING PORTAL...</div>
+      </div>
+    );
+  }
+
+  if (!business) {
+    return (
+      <div className="min-h-screen bg-black text-white p-10 font-mono text-center">
+        <h1 className="text-2xl font-black text-red-400">Business Listing Not Found</h1>
+        <p className="text-xs text-zinc-500 mt-2">The requested page does not exist or has been removed.</p>
+        <Link href="/" className="mt-4 inline-block text-xs bg-cyan-400 text-black px-5 py-2.5 rounded-full font-bold">
+          ← Back to Directory
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 max-w-lg mx-auto">
-      <div className="mt-6 bg-[#1A1A1A] border border-[#2A2A2A] rounded-[24px] p-6">
-        <div className="flex justify-between items-start">
-          <h1 className="text-3xl font-black">{business.name}</h1>
-          {isDepositRequired && depositAmount > 0 && (
-            <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-3 py-1 rounded-full">
-              💳 Paystack Deposit: R{depositAmount}
+    <div className="min-h-screen bg-black text-white p-6 max-w-3xl mx-auto font-sans selection:bg-cyan-500 selection:text-black pb-20">
+      {/* HEADER */}
+      <div className="pb-6 border-b border-zinc-800">
+        <Link href="/" className="text-xs font-mono text-cyan-400 hover:underline">
+          ← Back to Secunda Directory
+        </Link>
+        <div className="mt-4 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-mono font-bold bg-cyan-500/10 text-cyan-400 px-3 py-1 rounded-full border border-cyan-500/20">
+              {business.category || "Local Service"}
             </span>
+            <h1 className="text-3xl font-black mt-2 text-white">{business.name}</h1>
+          </div>
+          {business.price > 0 && (
+            <div className="text-right">
+              <span className="text-[10px] text-zinc-500 font-mono uppercase font-bold block">Starting At</span>
+              <span className="text-2xl font-black text-emerald-400 font-mono">R{business.price}</span>
+            </div>
           )}
         </div>
-        <p className="text-zinc-500 text-sm mt-1">{business.category} // Secunda</p>
+        <p className="text-xs text-zinc-400 mt-2 font-mono">
+          {business.description || "Top rated local service provider in Secunda."}
+        </p>
+      </div>
 
-        <div className="mt-6">
-          <div className="flex justify-between items-center">
-            <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Select Services (Multi-select)</p>
-            <span className="text-[11px] text-zinc-500 font-bold">{selectedServiceIds.length} selected</span>
-          </div>
-          <div className="mt-3 grid gap-2">
-            {services.map((s) => {
-              const isSelected = selectedServiceIds.includes(s.id);
-              return (
-                <button
-                  type="button"
-                  key={s.id}
-                  onClick={() => toggleServiceSelection(s.id)}
-                  className={`text-left p-4 rounded-[14px] border text-sm font-bold flex justify-between items-center transition ${
-                    isSelected ? "bg-white text-black border-white" : "bg-[#0F0F0F] border-[#2A2A2A] text-white hover:border-zinc-700"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center text-xs ${isSelected ? "bg-black text-white border-black" : "border-zinc-700 bg-black"}`}>
-                      {isSelected && "✓"}
-                    </div>
-                    <span>{s.name}</span>
-                  </div>
-                  <span>R{s.price}</span>
-                </button>
-              );
-            })}
+      {/* BOOKING FORM */}
+      <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+        <div className="bg-[#121212] border border-zinc-800 rounded-[24px] p-6 space-y-4">
+          <h2 className="text-sm font-black text-cyan-400 font-mono uppercase tracking-wider">
+            1. Select Date & Time
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[11px] font-mono text-zinc-400 block mb-1">BOOKING DATE</label>
+              <input
+                type="date"
+                required
+                value={bookingDate}
+                onChange={(e) => setBookingDate(e.target.value)}
+                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-400 focus:outline-none font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-mono text-zinc-400 block mb-1">PREFERRED TIME</label>
+              <select
+                value={bookingTime}
+                onChange={(e) => setBookingTime(e.target.value)}
+                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-400 focus:outline-none font-mono"
+              >
+                {["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"].map(
+                  (time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
           </div>
         </div>
 
-        <form onSubmit={handleBooking} className="mt-6 space-y-3">
-          <input
-            placeholder="Your Name"
-            value={formData.client_name}
-            onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-            className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white"
-          />
-          <input
-            placeholder="WhatsApp Number e.g 0721234567"
-            value={formData.client_phone}
-            onChange={(e) => setFormData({ ...formData, client_phone: e.target.value })}
-            className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white"
-          />
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="date"
-              value={formData.booking_date}
-              onChange={(e) => setFormData({ ...formData, booking_date: e.target.value })}
-              className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white focus:outline-none focus:border-white"
-            />
-            <input
-              type="time"
-              value={formData.booking_time}
-              onChange={(e) => setFormData({ ...formData, booking_time: e.target.value })}
-              className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-full px-5 py-3 text-sm text-white focus:outline-none focus:border-white"
-            />
-          </div>
+        <div className="bg-[#121212] border border-zinc-800 rounded-[24px] p-6 space-y-4">
+          <h2 className="text-sm font-black text-cyan-400 font-mono uppercase tracking-wider">
+            2. Client Contact Details
+          </h2>
 
-          <button
-            type="submit"
-            disabled={paying}
-            className="w-full bg-white text-black py-4 rounded-full font-black text-sm mt-2 hover:bg-zinc-200 transition disabled:opacity-50"
-          >
-            {paying
-              ? "Connecting to Paystack..."
-              : isDepositRequired && depositAmount > 0
-              ? `Pay R${depositAmount} Deposit & Book (${selectedServiceIds.length} services)`
-              : `Confirm Booking - R${totalPrice}`}
-          </button>
-          
-          <p className="text-[11px] text-zinc-600 text-center mt-2">
-            {isDepositRequired && depositAmount > 0
-              ? "🔒 Secure online payments powered by Paystack"
-              : "Automated confirmation details will be sent directly to your WhatsApp"}
-          </p>
-        </form>
-      </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-[11px] font-mono text-zinc-400 block mb-1">YOUR FULL NAME</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Johan Botha"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-400 focus:outline-none font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-mono text-zinc-400 block mb-1">WHATSAPP / PHONE NUMBER</label>
+              <input
+                type="tel"
+                required
+                placeholder="e.g. 0721234567"
+                value={clientPhone}
+                onChange={(e) => setClientPhone(e.target.value)}
+                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-400 focus:outline-none font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-mono text-zinc-400 block mb-1">SPECIAL INSTRUCTIONS / NOTES (OPTIONAL)</label>
+              <textarea
+                rows={3}
+                placeholder="Any special requests or details..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-400 focus:outline-none font-mono"
+              />
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-black font-mono py-4 rounded-full text-sm hover:opacity-90 transition shadow-[0_0_20px_rgba(6,182,212,0.4)] disabled:opacity-50"
+        >
+          {submitting ? "Processing Booking..." : "⚡ Confirm Booking & Open WhatsApp →"}
+        </button>
+      </form>
     </div>
   );
 }
