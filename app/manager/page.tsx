@@ -10,6 +10,7 @@ export default function ManagerPortal() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searched, setSearched] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
     const savedBusinessId = localStorage.getItem("hustlehub_manager_biz_id");
@@ -74,7 +75,7 @@ export default function ManagerPortal() {
     setSearchQuery("");
   };
 
-  // Booking Action Handlers
+  // AUTOMATED BOOKING ACTION HANDLER (BACKEND WHATSAPP DISPATCH)
   const handleBookingAction = async (booking: any, action: "confirm" | "reschedule" | "decline" | "delete") => {
     if (action === "delete") {
       if (!confirm(`Are you sure you want to delete the booking for ${booking.client_name}?`)) return;
@@ -88,35 +89,50 @@ export default function ManagerPortal() {
       return;
     }
 
+    setActionLoadingId(booking.id);
     const newStatus = action === "confirm" ? "confirmed" : action === "reschedule" ? "rescheduled" : "declined";
     
-    // Update Supabase Database
+    // 1. Update status in Supabase
     const { error } = await supabase.from("bookings").update({ status: newStatus }).eq("id", booking.id);
     
     if (error) {
       alert("Status update failed: " + error.message);
+      setActionLoadingId(null);
       return;
     }
 
-    // Update Local State
+    // 2. Update local state so status badge changes immediately
     setBookings(bookings.map((b) => (b.id === booking.id ? { ...b, status: newStatus } : b)));
 
-    // Generate Tailored WhatsApp Reply to Client
+    // 3. Prepare message payload for automated dispatch
     const clientPhone = (booking.client_phone || "").replace(/[^0-9]/g, "");
     let textMessage = "";
 
     if (action === "confirm") {
       textMessage = `Hi ${booking.client_name}! ⚡ Your booking for "${booking.service_name || "Service"}" on ${booking.booking_date} at ${booking.booking_time} with ${business.name} is CONFIRMED! See you then.`;
     } else if (action === "reschedule") {
-      textMessage = `Hi ${booking.client_name}! Regarding your booking for "${booking.service_name || "Service"}" with ${business.name}: We need to reschedule this appointment. Could you please reply with another date or time that works for you?`;
+      textMessage = `Hi ${booking.client_name}! Regarding your booking for "${booking.service_name || "Service"}" with ${business.name}: We need to reschedule this appointment. Could you please reply with another preferred date or time?`;
     } else if (action === "decline") {
       textMessage = `Hi ${booking.client_name}! Unfortunately, ${business.name} is unable to accept your booking request for ${booking.booking_date} at ${booking.booking_time}. Apologies for any inconvenience!`;
     }
 
+    // 4. Send background WhatsApp request via API route without redirecting
     if (clientPhone && textMessage) {
-      const whatsappUrl = `https://wa.me/${clientPhone}?text=${encodeURIComponent(textMessage)}`;
-      window.open(whatsappUrl, "_blank");
+      try {
+        await fetch("/api/send-whatsapp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: clientPhone,
+            message: textMessage,
+          }),
+        });
+      } catch (err) {
+        console.error("WhatsApp background send failed:", err);
+      }
     }
+
+    setActionLoadingId(null);
   };
 
   // Metrics Calculations
@@ -128,14 +144,14 @@ export default function ManagerPortal() {
 
   return (
     <main className="min-h-screen bg-black text-white p-6 max-w-5xl mx-auto font-mono selection:bg-cyan-500 selection:text-black pb-24">
-      {/* TOP HEADER */}
+      {/* HEADER */}
       <div className="flex items-center justify-between pb-6 border-b border-zinc-800">
         <div>
           <Link href="/" className="text-xs text-cyan-400 hover:underline">
             ← Back to Directory
           </Link>
           <h1 className="text-2xl font-black text-white mt-2">💼 Manager Portal</h1>
-          <p className="text-xs text-zinc-400 mt-1">Manage your business bookings & client communications</p>
+          <p className="text-xs text-zinc-400 mt-1">Manage your business bookings & automated client notices</p>
         </div>
 
         {business && (
@@ -148,7 +164,7 @@ export default function ManagerPortal() {
         )}
       </div>
 
-      {/* LOGIN / CLAIM BUSINESS FORM */}
+      {/* LOGIN / SEARCH FORM */}
       {!business ? (
         <div className="mt-12 bg-[#121212] border border-zinc-800 rounded-[24px] p-8 max-w-xl mx-auto text-center space-y-6">
           <div className="text-4xl">🏢</div>
@@ -186,7 +202,7 @@ export default function ManagerPortal() {
       ) : (
         /* ACTIVE MANAGER DASHBOARD */
         <div className="mt-8 space-y-8">
-          {/* RELEVANT MANAGER METRICS GRID */}
+          {/* METRICS GRID */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-[#121212] border border-zinc-800 rounded-2xl p-4 text-center">
               <span className="text-[10px] text-zinc-500 block uppercase font-bold">Est. Total Revenue</span>
@@ -233,14 +249,18 @@ export default function ManagerPortal() {
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 {bookings.map((b) => {
-                  const statusColor =
-                    b.status === "confirmed"
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                      : b.status === "rescheduled"
-                      ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                      : b.status === "declined"
-                      ? "bg-red-500/10 text-red-400 border-red-500/30"
-                      : "bg-cyan-500/10 text-cyan-400 border-cyan-500/30";
+                  const currentStatus = (b.status || "pending").toLowerCase();
+                  
+                  const statusStyle =
+                    currentStatus === "confirmed"
+                      ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                      : currentStatus === "rescheduled"
+                      ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
+                      : currentStatus === "declined"
+                      ? "bg-red-500/20 text-red-400 border-red-500/40"
+                      : "bg-cyan-500/20 text-cyan-400 border-cyan-500/40";
+
+                  const isProcessing = actionLoadingId === b.id;
 
                   return (
                     <div
@@ -250,19 +270,14 @@ export default function ManagerPortal() {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-3">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-lg font-black text-white">{b.client_name}</span>
-                            <span className={`text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full border ${statusColor}`}>
-                              {b.status || "pending"}
+                            <span className="text-lg font-black text-white">Hi {b.client_name || "Client"}</span>
+                            <span className={`text-[10px] uppercase font-bold px-3 py-1 rounded-full border ${statusStyle}`}>
+                              {currentStatus}
                             </span>
                           </div>
-                          <a
-                            href={`https://wa.me/${(b.client_phone || "").replace(/[^0-9]/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-emerald-400 hover:underline font-bold mt-1 inline-block"
-                          >
-                            💬 WhatsApp Client: {b.client_phone}
-                          </a>
+                          <span className="text-xs text-emerald-400 font-bold mt-1 block">
+                            💬 WhatsApp Client: {b.client_phone || "Not provided"}
+                          </span>
                         </div>
 
                         <div className="text-right">
@@ -291,29 +306,33 @@ export default function ManagerPortal() {
                         </div>
                       )}
 
-                      {/* ACTION BUTTONS (CONFIRM, RESCHEDULE, DECLINE, DELETE) */}
+                      {/* ACTION BUTTONS (AUTOMATED WHATSAPP BACKEND DISPATCH) */}
                       <div className="pt-2 flex flex-wrap items-center gap-2 font-mono">
                         <button
+                          disabled={isProcessing}
                           onClick={() => handleBookingAction(b, "confirm")}
-                          className="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3.5 py-2 rounded-xl font-bold hover:bg-emerald-500 hover:text-black transition"
+                          className="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-2.5 rounded-xl font-bold hover:bg-emerald-500 hover:text-black transition disabled:opacity-50"
                         >
-                          ✅ Confirm & WhatsApp
+                          {isProcessing ? "Processing..." : "✅ Confirm"}
                         </button>
                         <button
+                          disabled={isProcessing}
                           onClick={() => handleBookingAction(b, "reschedule")}
-                          className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3.5 py-2 rounded-xl font-bold hover:bg-amber-500 hover:text-black transition"
+                          className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-4 py-2.5 rounded-xl font-bold hover:bg-amber-500 hover:text-black transition disabled:opacity-50"
                         >
                           📅 Reschedule
                         </button>
                         <button
+                          disabled={isProcessing}
                           onClick={() => handleBookingAction(b, "decline")}
-                          className="text-xs bg-red-500/20 text-red-400 border border-red-500/30 px-3.5 py-2 rounded-xl font-bold hover:bg-red-500 hover:text-black transition"
+                          className="text-xs bg-red-500/20 text-red-400 border border-red-500/30 px-4 py-2.5 rounded-xl font-bold hover:bg-red-500 hover:text-black transition disabled:opacity-50"
                         >
                           ❌ Decline
                         </button>
                         <button
+                          disabled={isProcessing}
                           onClick={() => handleBookingAction(b, "delete")}
-                          className="text-xs bg-zinc-900 text-zinc-500 border border-zinc-800 px-3.5 py-2 rounded-xl font-bold hover:text-red-400 hover:border-red-500/40 transition ml-auto"
+                          className="text-xs bg-zinc-900 text-zinc-500 border border-zinc-800 px-3.5 py-2.5 rounded-xl font-bold hover:text-red-400 hover:border-red-500/40 transition ml-auto disabled:opacity-50"
                         >
                           🗑️ Delete
                         </button>
