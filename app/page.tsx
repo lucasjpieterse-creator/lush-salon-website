@@ -45,52 +45,93 @@ export default function LandingPage() {
 
   return (
     <main className="min-h-screen bg-black text-white p-6 max-w-7xl mx-auto selection:bg-cyan-500 selection:text-black pb-24 relative overflow-hidden">
-      {/* DYNAMIC SEASON OVERLAY - ON TOP (z-50) */}
-      {theme.seasonKey === "halloween" && (
-        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-          <div className="absolute top-4 left-4 text-4xl sm:text-5xl animate-pumpkin-glow">🎃</div>
-          <div className="absolute bottom-4 right-4 text-4xl sm:text-5xl animate-pumpkin-glow">🎃</div>
-
-          <div className="absolute top-[12%] animate-fly-bat-1">
-            <span className="inline-block text-2xl sm:text-3xl animate-flap-wings">🦇</span>
-          </div>
-          <div className="absolute top-[45%] animate-fly-bat-2">
-            <span className="inline-block text-3xl sm:text-4xl animate-flap-wings">🦇</span>
-          </div>
-          <div className="absolute top-[75%] animate-fly-bat-3">
-            <span className="inline-block text-2xl sm:text-3xl animate-flap-wings">🦇</span>
-          </div>
+      {/* FULLY AUTOMATED SEASONAL OVERLAY - ALWAYS ON TOP (z-50) */}
+      <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+        {/* TOP RIGHT GLOWING ELEMENT (e.g. Flower 🌸 in Spring, Pumpkin 🎃 in Halloween) */}
+        <div className="absolute top-4 right-4 text-4xl sm:text-5xl animate-season-glow">
+          {theme.cornerEmojiTopRight}
         </div>
-      )}
 
-      {/* CUSTOM ANIMATIONS */}
+        {/* BOTTOM LEFT GLOWING ELEMENT */}
+        <div className="absolute bottom-4 left-4 text-4xl sm:text-5xl animate-season-glow">
+          {theme.cornerEmojiBottomLeft}
+        </div>
+
+        {/* FLYING ELEMENT 1 (e.g. Bee 🐝 in Spring, Bat 🦇 in Halloween, Sleigh 🛷 in Xmas) */}
+        <div className="absolute top-[15%] animate-fly-1">
+          <span className="inline-block text-2xl sm:text-3xl animate-bob-wing">{theme.flyingEmoji}</span>
+        </div>
+
+        {/* FLYING ELEMENT 2 */}
+        <div className="absolute top-[48%] animate-fly-2">
+          <span className="inline-block text-3xl sm:text-4xl animate-bob-wing">{theme.flyingEmoji}</span>
+        </div>
+
+        {/* FLYING ELEMENT 3 */}
+        <div className="absolute top-[78%] animate-fly-3">
+          <span className="inline-block text-2xl sm:text-3xl animate-bob-wing">{theme.flyingEmoji}</span>
+        </div>
+      </div>
+
+      {/* DYNAMIC SEASONAL KEYFRAME ANIMATIONS */}
       <style jsx global>{`
-        @keyframes pumpkinPulse {
+        @keyframes seasonPulse {
           0%, 100% {
-            filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.8)) drop-shadow(0 0 25px rgba(249, 115, 22, 0.5));
+            filter: drop-shadow(0 0 10px rgba(${theme.glowColorRgb}, 0.8)) drop-shadow(0 0 25px rgba(${theme.glowColorRgb}, 0.5));
             transform: scale(1);
           }
           50% {
-            filter: drop-shadow(0 0 20px rgba(249, 115, 22, 1)) drop-shadow(0 0 40px rgba(249, 115, 22, 0.8));
-            transform: scale(1.08);
+            filter: drop-shadow(0 0 20px rgba(${theme.glowColorRgb}, 1)) drop-shadow(0 0 40px rgba(${theme.glowColorRgb}, 0.8));
+            transform: scale(1.1);
           }
         }
-        @keyframes flapWings {
-          0%, 100% { transform: scaleX(1) translateY(0px); }
-          50% { transform: scaleX(-0.8) translateY(-6px); }
-        }
-        @keyframes flyAcross1 { 0% { left: -10%; } 100% { left: 110%; } }
-        @keyframes flyAcross2 { 0% { left: -15%; } 100% { left: 115%; } }
-        @keyframes flyAcross3 { 0% { left: -20%; } 100% { left: 120%; } }
 
-        .animate-pumpkin-glow { animation: pumpkinPulse 2.5s infinite ease-in-out; }
-        .animate-flap-wings { animation: flapWings 0.35s infinite ease-in-out; }
-        .animate-fly-bat-1 { animation: flyAcross1 12s infinite linear; }
-        .animate-fly-bat-2 { animation: flyAcross2 8s infinite linear 2s; }
-        .animate-fly-bat-3 { animation: flyAcross3 15s infinite linear 5s; }
+        @keyframes bobWing {
+          0%, 100% {
+            transform: translateY(0px) rotate(0deg);
+          }
+          50% {
+            transform: translateY(-8px) rotate(6deg);
+          }
+        }
+
+        @keyframes flyLeftToRight1 {
+          0% { left: -10%; }
+          100% { left: 110%; }
+        }
+
+        @keyframes flyLeftToRight2 {
+          0% { left: -15%; }
+          100% { left: 115%; }
+        }
+
+        @keyframes flyLeftToRight3 {
+          0% { left: -20%; }
+          100% { left: 120%; }
+        }
+
+        .animate-season-glow {
+          animation: seasonPulse 2.5s infinite ease-in-out;
+        }
+
+        .animate-bob-wing {
+          animation: bobWing 0.4s infinite ease-in-out;
+        }
+
+        .animate-fly-1 {
+          animation: flyLeftToRight1 11s infinite linear;
+        }
+
+        .animate-fly-2 {
+          animation: flyLeftToRight2 8s infinite linear 2s;
+        }
+
+        .animate-fly-3 {
+          animation: flyLeftToRight3 14s infinite linear 5s;
+        }
       `}</style>
 
-      {/* SEASONAL HEADER */}
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 border-b border-zinc-800 gap-4 relative z-10">
         <div>
           <div className="flex items-center gap-2">

@@ -5,9 +5,10 @@ export interface ThemeConfig {
   accentColor: string;
   badgeBg: string;
   badgeText: string;
-  pumpkinsTopLeft?: boolean;
-  pumpkinsBottomRight?: boolean;
-  flyingBats?: boolean;
+  cornerEmojiTopRight: string;
+  cornerEmojiBottomLeft: string;
+  flyingEmoji: string;
+  glowColorRgb: string; // e.g. "244, 63, 94" for rose/pink glow
   primaryEmoji: string;
   secondaryEmoji: string;
   subtitle: string;
@@ -27,9 +28,10 @@ export function getCurrentSeasonTheme(): ThemeConfig {
       accentColor: "#f97316",
       badgeBg: "bg-orange-500/20",
       badgeText: "text-orange-400 border-orange-500/30",
-      pumpkinsTopLeft: true,
-      pumpkinsBottomRight: true,
-      flyingBats: true,
+      cornerEmojiTopRight: "🎃",
+      cornerEmojiBottomLeft: "🎃",
+      flyingEmoji: "🦇",
+      glowColorRgb: "249, 115, 22", // Orange
       primaryEmoji: "🎃",
       secondaryEmoji: "🦇",
       subtitle: "Secunda's Spooktacular Local Service Directory 🎃",
@@ -45,14 +47,18 @@ export function getCurrentSeasonTheme(): ThemeConfig {
       accentColor: "#ef4444",
       badgeBg: "bg-red-500/20",
       badgeText: "text-red-400 border-red-500/30",
+      cornerEmojiTopRight: "🎄",
+      cornerEmojiBottomLeft: "🎄",
+      flyingEmoji: "🛷",
+      glowColorRgb: "239, 68, 68", // Red
       primaryEmoji: "🎄",
       secondaryEmoji: "✨",
       subtitle: "Secunda's Festive Local Service Directory 🎄",
     };
   }
 
-  // SA SPRING & SUMMER (Nov 1 - Dec 14 & Jan 1 - Feb 28)
-  if ((month === 11) || (month === 12 && day < 15) || month === 1 || month === 2) {
+  // SA SUMMER (Nov 1 - Dec 14 & Jan 1 - Feb 28)
+  if (month === 11 || (month === 12 && day < 15) || month === 1 || month === 2) {
     return {
       name: "Sunny South African Summer",
       seasonKey: "summer",
@@ -60,6 +66,10 @@ export function getCurrentSeasonTheme(): ThemeConfig {
       accentColor: "#10b981",
       badgeBg: "bg-emerald-500/20",
       badgeText: "text-emerald-400 border-emerald-500/30",
+      cornerEmojiTopRight: "☀️",
+      cornerEmojiBottomLeft: "🌴",
+      flyingEmoji: "🦋",
+      glowColorRgb: "245, 158, 11", // Amber
       primaryEmoji: "☀️",
       secondaryEmoji: "🌴",
       subtitle: "Secunda's Summer Local Service Directory ☀️",
@@ -75,6 +85,10 @@ export function getCurrentSeasonTheme(): ThemeConfig {
       accentColor: "#d97706",
       badgeBg: "bg-amber-500/20",
       badgeText: "text-amber-400 border-amber-500/30",
+      cornerEmojiTopRight: "🍂",
+      cornerEmojiBottomLeft: "🍁",
+      flyingEmoji: "🍃",
+      glowColorRgb: "217, 119, 6", // Amber Bronze
       primaryEmoji: "🍂",
       secondaryEmoji: "🍁",
       subtitle: "Secunda's Autumn Local Service Directory 🍂",
@@ -90,13 +104,17 @@ export function getCurrentSeasonTheme(): ThemeConfig {
       accentColor: "#38bdf8",
       badgeBg: "bg-sky-500/20",
       badgeText: "text-sky-400 border-sky-500/30",
+      cornerEmojiTopRight: "❄️",
+      cornerEmojiBottomLeft: "❄️",
+      flyingEmoji: "⛄",
+      glowColorRgb: "56, 189, 248", // Sky Blue
       primaryEmoji: "❄️",
       secondaryEmoji: "☕",
       subtitle: "Secunda's Winter Local Service Directory ❄️",
     };
   }
 
-  // EARLY SPRING (Sep 1 - Oct 14)
+  // SPRING BLOOM (Sep 1 - Oct 14) -> CURRENT SEASON
   return {
     name: "Spring Bloom",
     seasonKey: "spring",
@@ -104,8 +122,12 @@ export function getCurrentSeasonTheme(): ThemeConfig {
     accentColor: "#f43f5e",
     badgeBg: "bg-rose-500/20",
     badgeText: "text-rose-400 border-rose-500/30",
+    cornerEmojiTopRight: "🌸",
+    cornerEmojiBottomLeft: "🌸",
+    flyingEmoji: "🐝",
+    glowColorRgb: "244, 63, 94", // Flower Rose Glow
     primaryEmoji: "🌸",
-    secondaryEmoji: "🦋",
+    secondaryEmoji: "🐝",
     subtitle: "Secunda's Spring Local Service Directory 🌸",
   };
 }
