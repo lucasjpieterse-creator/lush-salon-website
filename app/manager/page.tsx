@@ -112,7 +112,7 @@ export default function ManagerPortal() {
             <input
               type="text"
               required
-              placeholder="e.g. 0721234567 or Fade Masters"
+              placeholder="e.g. Fade Masters or 0721234567"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-400 focus:outline-none text-center"
@@ -128,7 +128,7 @@ export default function ManagerPortal() {
 
           {searched && !business && (
             <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400">
-              No active listing found matching "{searchQuery}". Make sure your listing is approved by the admin.
+              No active listing found matching "{searchQuery}". Make sure your listing is approved in the directory.
             </div>
           )}
         </div>
