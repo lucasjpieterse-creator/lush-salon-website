@@ -1,6 +1,6 @@
 export async function POST(req: Request) {
   try {
-    const { to } = await req.json();
+    const { to, clientName, bookingDate } = await req.json();
     if (!to) return Response.json({ error: "no number" }, { status: 400 });
 
     const cleanTo = to.toString().replace(/\D/g, '').replace(/^0/, '27');
@@ -10,8 +10,17 @@ export async function POST(req: Request) {
       to: cleanTo,
       type: "template",
       template: {
-        name: "3p_direct_integration_test_template",
-        language: { code: "en_US" }
+        name: "booking_confirmed",
+        language: { code: "en" }, // Set to "en" or "en_US" as shown in Meta Manager
+        components: [
+          {
+            type: "body",
+            parameters: [
+              { type: "text", text: clientName || "Valued Client" }
+              // Add additional parameter objects here if your template has {{1}}, {{2}}, etc.
+            ]
+          }
+        ]
       }
     };
 
