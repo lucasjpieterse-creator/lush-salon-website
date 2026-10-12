@@ -1,6 +1,6 @@
 export async function POST(req: Request) {
   try {
-    const { to, clientName, bookingDate } = await req.json();
+    const { to } = await req.json();
     if (!to) return Response.json({ error: "no number" }, { status: 400 });
 
     const cleanTo = to.toString().replace(/\D/g, '').replace(/^0/, '27');
@@ -10,18 +10,8 @@ export async function POST(req: Request) {
       to: cleanTo,
       type: "template",
       template: {
-        name: "booking_notification",
-        language: { code: "en_US" },
-        // Add components if your template has variables like {{1}}, {{2}}
-        components: [
-          {
-            type: "body",
-            parameters: [
-              { type: "text", text: clientName || "Valued Customer" },
-              { type: "text", text: bookingDate || "your scheduled time" }
-            ]
-          }
-        ]
+        name: "3p_direct_integration_test_template",
+        language: { code: "en_US" }
       }
     };
 
@@ -35,7 +25,7 @@ export async function POST(req: Request) {
     });
 
     const result = await res.json();
-    console.log("WhatsApp API Response:", result);
+    console.log("WhatsApp result:", result);
     return Response.json(result);
   } catch (e) {
     console.error(e);
