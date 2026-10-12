@@ -1,18 +1,25 @@
 export async function POST(req: Request) {
   try {
-    const { to } = await req.json();
+    const { to, clientName } = await req.json();
     if (!to) return Response.json({ error: "no number" }, { status: 400 });
 
     const cleanTo = to.toString().replace(/\D/g, '').replace(/^0/, '27');
 
-    // Default Meta sandbox template that requires 0 dynamic body parameters
     const payload = {
       messaging_product: "whatsapp",
       to: cleanTo,
       type: "template",
       template: {
-        name: "hello_world",
-        language: { code: "en_US" }
+        name: "booking_confirmed",
+        language: { code: "en" },
+        components: [
+          {
+            type: "body",
+            parameters: [
+              { type: "text", text: clientName || "Valued Client" }
+            ]
+          }
+        ]
       }
     };
 
