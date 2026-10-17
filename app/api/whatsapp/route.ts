@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
       reply = "Got it! 🍗 2 chickens = R280\nDelivery 30-45min Secunda\nReply YES + location to confirm."
     } else {
-      reply = "Hi! Welcome to HustleHub Secunda 🐔\nType 'I want 2 chickens' to order."
+      reply = "Hi! Welcome to teksbook Secunda 🐔\nType 'I want 2 chickens' to order."
     }
 
     return NextResponse.json({ reply, ok: true })

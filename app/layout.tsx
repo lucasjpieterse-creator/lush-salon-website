@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "HustleHub Secunda | On-Demand Local Service Directory",
+  title: "teksbook Secunda | On-Demand Local Service Directory",
   description: "Discover and book trusted local service providers in Secunda.",
 };
 

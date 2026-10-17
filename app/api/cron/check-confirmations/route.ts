@@ -40,7 +40,7 @@ export async function GET() {
           to: cleanTo,
           type: "text",
           text: {
-            body: `Hi ${booking.client_name} 👋 Your booking for ${timeStr} at HustleHub was cancelled because you didn't confirm on WhatsApp.\n\nYou can rebook anytime on our site.`
+            body: `Hi ${booking.client_name} 👋 Your booking for ${timeStr} at teksbook was cancelled because you didn't confirm on WhatsApp.\n\nYou can rebook anytime on our site.`
           }
         })
       })

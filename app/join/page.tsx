@@ -49,7 +49,7 @@ export default function JoinPage() {
     } else {
       // Dispatch Automated WhatsApp Alert to CEO Lucas
       const ceoPhone = "27721234567"; // Replace with your WhatsApp number
-      const ceoAlertMsg = `🚨 NEW HUSTLE REGISTRATION - HustleHub Secunda\n\n🏢 Business: ${name}\n📂 Category: ${category}\n📱 WhatsApp: ${whatsapp}\n🔑 Slug: ${slug}\n\nReview & Approve Listing:\nhttps://hustlehubsecunda.co.za/ceo`;
+      const ceoAlertMsg = `🚨 NEW HUSTLE REGISTRATION - teksbook Secunda\n\n🏢 Business: ${name}\n📂 Category: ${category}\n📱 WhatsApp: ${whatsapp}\n🔑 Slug: ${slug}\n\nReview & Approve Listing:\nhttps://teksbooksecunda.co.za/ceo`;
 
       try {
         await fetch("/api/send-whatsapp", {

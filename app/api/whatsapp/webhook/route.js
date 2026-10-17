@@ -28,7 +28,7 @@ export async function POST(req) {
         messaging_product: "whatsapp",
         to: from,
         type: "text",
-        text: { body: "Thanks for messaging HustleHub! We'll be with you shortly." }
+        text: { body: "Thanks for messaging teksbook! We'll be with you shortly." }
       })
     });
 

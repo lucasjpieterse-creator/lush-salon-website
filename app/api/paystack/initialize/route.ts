@@ -20,10 +20,10 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: email || "customer@hustlehubsecunda.co.za",
+        email: email || "customer@teksbooksecunda.co.za",
         amount: Math.round(amount * 100),
         currency: "ZAR",
-        callback_url: `https://hustlehubsecunda.co.za/${metadata?.slug || ""}?payment=success`,
+        callback_url: `https://teksbooksecunda.co.za/${metadata?.slug || ""}?payment=success`,
         metadata,
       }),
     });

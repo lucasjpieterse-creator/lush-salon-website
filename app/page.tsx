@@ -54,7 +54,7 @@ export default function LandingPage() {
   if (loading || !theme) {
     return (
       <div className="min-h-screen bg-black text-cyan-400 p-10 font-mono font-bold flex flex-col items-center justify-center">
-        <div className="text-2xl animate-pulse">⚡ LOADING HUSTLEHUB SECUNDA...</div>
+        <div className="text-2xl animate-pulse">⚡ LOADING TekSBook...</div>
       </div>
     );
   }
@@ -152,10 +152,12 @@ export default function LandingPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-amber-400 tracking-tight">
-              HUSTLEHUB SECUNDA {theme.primaryEmoji}
+              TekSBook {theme.primaryEmoji}
             </h1>
           </div>
-          <p className="text-xs text-zinc-400 mt-1 font-mono">{theme.subtitle}</p>
+          <p className="text-xs text-zinc-400 mt-1 font-mono">
+            {theme.subtitle} • Secunda, Evander, Trichardt & Kinross
+          </p>
         </div>
 
         <div className="flex items-center gap-3 font-mono">
@@ -169,7 +171,7 @@ export default function LandingPage() {
             href="/join"
             className="text-xs bg-cyan-400 text-black px-5 py-2.5 rounded-full font-black hover:bg-cyan-300 transition shadow-[0_0_15px_rgba(6,182,212,0.3)]"
           >
-            + Add Hustle
+            + Add Business
           </Link>
         </div>
       </div>
@@ -196,7 +198,7 @@ export default function LandingPage() {
         {filteredBusinesses.map((biz) => {
           const whatsappPhone = biz.whatsapp || biz.phone || biz.whatsapp_number;
           const prefilledMsg = encodeURIComponent(
-            `Hi ${biz.name}! I found your listing on HustleHub Secunda and would like to enquire about your services.`
+            `Hi ${biz.name}! I found your listing on TekSBook and would like to enquire about your services.`
           );
           const whatsappLink = whatsappPhone
             ? `https://wa.me/${whatsappPhone.replace(/[^0-9]/g, "")}?text=${prefilledMsg}`
@@ -230,7 +232,7 @@ export default function LandingPage() {
 
                 <h2 className="text-xl font-black mt-3 text-white">{biz.name}</h2>
                 <p className="text-xs text-zinc-400 mt-1 line-clamp-2">
-                  {biz.description || "Top rated local service provider in Secunda."}
+                  {biz.description || "Top rated local service provider in TEKS."}
                 </p>
 
                 {biz.price > 0 && (
@@ -269,7 +271,7 @@ export default function LandingPage() {
       {/* FOOTER - LEGAL LINKS & COPYRIGHT */}
       <footer className="mt-16 pt-8 border-t border-zinc-800 text-center font-mono text-xs text-zinc-500 relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          © {new Date().getFullYear()} HustleHub Secunda. All rights reserved.
+          © {new Date().getFullYear()} TekSBook. All rights reserved.
         </div>
         <div className="flex items-center gap-4 text-zinc-400">
           <Link href="/privacy" className="hover:text-cyan-400 transition">
@@ -286,10 +288,10 @@ export default function LandingPage() {
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-xl bg-black/90 border border-cyan-500/40 rounded-full px-6 py-3 flex items-center justify-between shadow-[0_0_25px_rgba(6,182,212,0.3)] backdrop-blur-md z-40">
         <span className="text-xs font-mono text-zinc-300 truncate flex items-center gap-1.5">
           <span>{theme.primaryEmoji}</span>
-          <span>Can't find a trade or service in Secunda?</span>
+          <span>Can't find a service in TEKS?</span>
         </span>
         <a
-          href="https://wa.me/27725023999?text=Hi%20HustleHub!%20I%20am%20looking%20for%20a%20specific%20service%20in%20Secunda:"
+          href="https://wa.me/27650753499?text=Hi%20TekSBook!%20I%20am%20looking%20for%20a%20specific%20service%20in%20TEKS:"
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs font-mono font-bold bg-cyan-400 text-black px-4 py-2 rounded-full hover:bg-cyan-300 transition shrink-0 ml-2"

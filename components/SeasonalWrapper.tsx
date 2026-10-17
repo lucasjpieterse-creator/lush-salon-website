@@ -23,7 +23,7 @@ export default function SeasonalWrapper({
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="font-extrabold text-xl tracking-tight text-white flex items-center gap-2">
-              <span className="text-orange-500">HustleHub</span>
+              <span className="text-orange-500">teksbook</span>
               <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full border border-zinc-700">
                 Secunda
               </span>

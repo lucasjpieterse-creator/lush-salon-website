@@ -137,7 +137,7 @@ export default function PublicBookingPage() {
       ""
     ).replace(/[^0-9]/g, "");
 
-    const message = `⚡ NEW BOOKING REQUEST via HustleHub Secunda!\n\n🏢 Service Provider: ${business.name}\n👤 Client: ${clientName}\n📱 Contact: ${clientPhone}\n📅 Date: ${bookingDate}\n⏰ Time: ${bookingTime}\n🛠️ Selected Services:\n- ${selectedServices.join("\n- ")}\n💰 Total Price: R${calculatedTotal}\n\nNotes: ${notes || "None"}`;
+    const message = `⚡ NEW BOOKING REQUEST via teksbook Secunda!\n\n🏢 Service Provider: ${business.name}\n👤 Client: ${clientName}\n📱 Contact: ${clientPhone}\n📅 Date: ${bookingDate}\n⏰ Time: ${bookingTime}\n🛠️ Selected Services:\n- ${selectedServices.join("\n- ")}\n💰 Total Price: R${calculatedTotal}\n\nNotes: ${notes || "None"}`;
 
     try {
       await fetch("/api/send-whatsapp", {

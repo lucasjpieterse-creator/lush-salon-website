@@ -13,7 +13,7 @@ export default function ManagerPortal() {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const savedBusinessId = localStorage.getItem("hustlehub_manager_biz_id");
+    const savedBusinessId = localStorage.getItem("teksbook_manager_biz_id");
     if (savedBusinessId) {
       loadBusinessAndBookings(savedBusinessId);
     }
@@ -29,7 +29,7 @@ export default function ManagerPortal() {
 
     if (bizData) {
       setBusiness(bizData);
-      localStorage.setItem("hustlehub_manager_biz_id", bizData.id);
+      localStorage.setItem("teksbook_manager_biz_id", bizData.id);
 
       const { data: bookingData } = await supabase
         .from("bookings")
@@ -68,7 +68,7 @@ export default function ManagerPortal() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("hustlehub_manager_biz_id");
+    localStorage.removeItem("teksbook_manager_biz_id");
     setBusiness(null);
     setBookings([]);
     setSearched(false);

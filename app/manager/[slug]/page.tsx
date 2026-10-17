@@ -47,7 +47,7 @@ export default function ManagerPortal() {
   }, [slug]);
 
   const copyBookingLink = () => {
-    const link = `https://hustlehubsecunda.co.za/${business?.slug || slug}`;
+    const link = `https://teksbooksecunda.co.za/${business?.slug || slug}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);

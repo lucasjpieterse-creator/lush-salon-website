@@ -14,7 +14,7 @@ async function testWhatsApp() {
       to: "27725023999",
       type: "text",
       text: { 
-        body: "HustleHub: Thanks John! Order #1234 R250 paid. Driver on the way!" 
+        body: "teksbook: Thanks John! Order #1234 R250 paid. Driver on the way!" 
       }
     })
   });

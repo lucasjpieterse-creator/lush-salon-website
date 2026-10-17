@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-black text-zinc-300 font-sans p-6 md:p-12 max-w-4xl mx-auto">
-      <Link href="/" className="text-xs text-zinc-500 hover:text-white transition">← Back to HustleHub Secunda</Link>
+      <Link href="/" className="text-xs text-zinc-500 hover:text-white transition">← Back to teksbook Secunda</Link>
       
       <h1 className="text-3xl font-black text-white mt-4 mb-2">POPIA Privacy Policy</h1>
       <p className="text-xs text-zinc-500 mb-8">Compliant with the Protection of Personal Information Act (POPIA) of South Africa</p>
@@ -38,7 +38,7 @@ export default function PrivacyPage() {
         <div>
           <h2 className="text-lg font-bold text-white mb-2">4. Your POPIA Rights</h2>
           <p>
-            In terms of POPIA, you have the right to request access to your stored personal data, request corrections, or request complete deletion of your booking history from our servers by contacting support at support@hustlehubsecunda.co.za.
+            In terms of POPIA, you have the right to request access to your stored personal data, request corrections, or request complete deletion of your booking history from our servers by contacting support at support@teksbooksecunda.co.za.
           </p>
         </div>
       </section>

@@ -116,7 +116,7 @@ export default function CEODashboard() {
 
     const ownerPhone = (biz.whatsapp_number || biz.whatsapp || biz.owner_phone || biz.phone || "").toString();
     if (ownerPhone) {
-      const msg = `🎉 GREAT NEWS - ${biz.name} IS LIVE!\n\nYour business registration on HustleHub Secunda has been APPROVED by CEO Lucas.\n\nClients can now book you online:\nhttps://hustlehubsecunda.co.za/${biz.slug}\n\nManage your bookings:\nhttps://hustlehubsecunda.co.za/manager/${biz.slug}`;
+      const msg = `🎉 GREAT NEWS - ${biz.name} IS LIVE!\n\nYour business registration on teksbook Secunda has been APPROVED by CEO Lucas.\n\nClients can now book you online:\nhttps://teksbooksecunda.co.za/${biz.slug}\n\nManage your bookings:\nhttps://teksbooksecunda.co.za/manager/${biz.slug}`;
       await sendAutomatedWhatsApp(ownerPhone, msg);
     }
 
@@ -163,7 +163,7 @@ export default function CEODashboard() {
             </h1>
           </div>
           <p className="text-xs text-zinc-400 mt-1 font-mono">
-            HustleHub Secunda // Matrix Operational Status & Governance
+            teksbook Secunda // Matrix Operational Status & Governance
           </p>
         </div>
         <Link
