@@ -134,22 +134,16 @@ export default function PublicBookingPage() {
       business.whatsapp_number ||
       business.whatsapp ||
       business.phone ||
-      ""
+      "27650753499"
     ).replace(/[^0-9]/g, "");
 
-    const message = `⚡ NEW BOOKING REQUEST via teksbook Secunda!\n\n🏢 Service Provider: ${business.name}\n👤 Client: ${clientName}\n📱 Contact: ${clientPhone}\n📅 Date: ${bookingDate}\n⏰ Time: ${bookingTime}\n🛠️ Selected Services:\n- ${selectedServices.join("\n- ")}\n💰 Total Price: R${calculatedTotal}\n\nNotes: ${notes || "None"}`;
+    const message = `⚡ NEW BOOKING REQUEST via TekSBook!\n\n🏢 Service Provider: ${business.name}\n👤 Client: ${clientName}\n📱 Contact: ${clientPhone}\n📅 Date: ${bookingDate}\n⏰ Time: ${bookingTime}\n🛠️ Selected Services:\n${selectedServices.join(", ")}\n💰 Total Price: R${calculatedTotal}\n\nNotes: ${notes || "None"}`;
 
-    try {
-      await fetch("/api/send-whatsapp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: targetPhone, message }),
-      });
-    } catch (err) {
-      console.log("Automated dispatch triggered via backend queue");
-    }
+    // Trigger WhatsApp Click-to-Chat directly
+    const whatsappUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, "_blank");
 
-    alert(`✅ Booking Confirmed! Your request for R${calculatedTotal} has been automatically dispatched to ${business.name}.`);
+    alert(`✅ Booking Confirmed! Your request for R${calculatedTotal} has been saved and sent via WhatsApp.`);
     router.push("/");
   };
 
@@ -202,7 +196,7 @@ export default function PublicBookingPage() {
       {/* HEADER */}
       <div className="pb-6 border-b border-zinc-800 relative z-10">
         <Link href="/" className="text-xs font-mono text-cyan-400 hover:underline">
-          ← Back to Secunda Directory
+          ← Back to Directory
         </Link>
         <div className="mt-4 flex items-center justify-between">
           <div>
@@ -220,7 +214,7 @@ export default function PublicBookingPage() {
           </div>
         </div>
         <p className="text-xs text-zinc-400 mt-2 font-mono">
-          {business.description || "Top rated local service provider in Secunda."}
+          {business.description || "Top rated local service provider in TEKS region."}
         </p>
       </div>
 

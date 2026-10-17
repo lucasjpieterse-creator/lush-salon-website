@@ -75,7 +75,7 @@ export default function ManagerPortal() {
     setSearchQuery("");
   };
 
-  // AUTOMATED BOOKING ACTION HANDLER (BACKEND WHATSAPP DISPATCH)
+  // DIRECT WHATSAPP ACTION HANDLER FOR MANAGER PORTAL
   const handleBookingAction = async (booking: any, action: "confirm" | "reschedule" | "decline" | "delete") => {
     if (action === "delete") {
       if (!confirm(`Are you sure you want to delete the booking for ${booking.client_name}?`)) return;
@@ -106,7 +106,7 @@ export default function ManagerPortal() {
     // 2. Update local state so status badge changes immediately
     setBookings(bookings.map((b) => (b.id === booking.id ? { ...b, status: newStatus } : b)));
 
-    // 3. Prepare message payload for automated background WhatsApp dispatch
+    // 3. Prepare message text and trigger direct WhatsApp Click-to-Chat
     const clientPhone = (booking.client_phone || "").replace(/[^0-9]/g, "");
     let textMessage = "";
 
@@ -118,20 +118,9 @@ export default function ManagerPortal() {
       textMessage = `Hi ${booking.client_name}! Unfortunately, ${business.name} is unable to accept your booking request for ${booking.booking_date} at ${booking.booking_time}. Apologies for any inconvenience!`;
     }
 
-    // 4. Send background WhatsApp notification without redirecting
     if (clientPhone && textMessage) {
-      try {
-        await fetch("/api/send-whatsapp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: clientPhone,
-            message: textMessage,
-          }),
-        });
-      } catch (err) {
-        console.error("WhatsApp background send failed:", err);
-      }
+      const whatsappUrl = `https://wa.me/${clientPhone}?text=${encodeURIComponent(textMessage)}`;
+      window.open(whatsappUrl, "_blank");
     }
 
     setActionLoadingId(null);
@@ -181,7 +170,7 @@ export default function ManagerPortal() {
             <input
               type="text"
               required
-              placeholder="e.g. Fade Masters or 0721234567"
+              placeholder="e.g. Highveld Auto or 0650753499"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-400 focus:outline-none text-center"
@@ -315,7 +304,7 @@ export default function ManagerPortal() {
                           onClick={() => handleBookingAction(b, "confirm")}
                           className="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-2.5 rounded-xl font-bold hover:bg-emerald-500 hover:text-black transition disabled:opacity-50"
                         >
-                          {isProcessing ? "Processing..." : "✅ Confirm"}
+                          {isProcessing ? "Processing..." : "✅ Confirm & WhatsApp"}
                         </button>
                         <button
                           disabled={isProcessing}
