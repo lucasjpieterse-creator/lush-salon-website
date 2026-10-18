@@ -121,7 +121,7 @@ export default function ManagerPortal() {
     // 4. Trigger automated Meta Cloud API call from backend (No wa.me redirect)
     if (clientPhone && textMessage) {
       try {
-        await fetch('/api/whatsapp/send', {
+        await fetch('/api/send-whatsapp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

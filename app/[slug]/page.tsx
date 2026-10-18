@@ -144,7 +144,7 @@ export default function PublicBookingPage() {
 
     // 3. Trigger backend WhatsApp API call (No wa.me redirect)
     try {
-      await fetch('/api/whatsapp/send', {
+      await fetch('/api/send-whatsapp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

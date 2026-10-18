@@ -42,14 +42,15 @@ export default function ConfirmPage() {
         })
       : booking.booking_date;
 
-    // 3. Trigger automated WhatsApp to Client & Owner via backend API
+    // 3. Trigger automated WhatsApp to Client via backend API
     try {
-      await fetch('/api/whatsapp/send', {
+      await fetch('/api/send-whatsapp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: booking.client_phone || booking.phone,
-          message: `✅ Booking Confirmed!\n\nService: ${booking.service_name}\nDate: ${formattedDate}\nTime: ${booking.booking_time}\nPrice: R${booking.service_price}\n\nThank you for confirming via TekSBook!`
+          clientName: booking.client_name,
+          message: `✅ Booking Confirmed!\n\nService: ${booking.service_name}\nDate: ${formattedDate}\nTime: ${booking.booking_time}\nPrice: R${booking.service_price || booking.price}\n\nThank you for confirming via TekSBook!`
         })
       });
     } catch (err) {
@@ -70,10 +71,10 @@ export default function ConfirmPage() {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 flex flex-col items-center justify-center text-center">
+    <div className="min-h-screen bg-black text-white p-8 flex flex-col items-center justify-center text-center font-mono">
       <h1 className="text-2xl font-black">Confirm Booking</h1>
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mt-6 w-full max-w-sm text-left">
-        <p className="font-bold text-lg">{booking.service_name} - R{booking.service_price}</p>
+        <p className="font-bold text-lg">{booking.service_name} - R{booking.service_price || booking.price}</p>
         <p className="text-sm text-zinc-400 mt-2">👤 {booking.client_name}</p>
         <p className="text-sm text-zinc-400 mt-1">📅 {booking.booking_date} at {booking.booking_time}</p>
         
