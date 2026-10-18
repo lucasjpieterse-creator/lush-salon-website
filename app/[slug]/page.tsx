@@ -122,6 +122,7 @@ export default function PublicBookingPage() {
       status: "pending",
     };
 
+    // 1. Save booking to Supabase
     const { error } = await supabase.from("bookings").insert([bookingPayload]);
 
     if (error) {
@@ -130,20 +131,33 @@ export default function PublicBookingPage() {
       return;
     }
 
-    const targetPhone = (
-      business.whatsapp_number ||
-      business.whatsapp ||
-      business.phone ||
-      "27650753499"
-    ).replace(/[^0-9]/g, "");
+    // 2. Format message for automated Meta WhatsApp API
+    const formattedDate = bookingDate
+      ? new Date(bookingDate).toLocaleDateString("en-ZA", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : bookingDate;
 
-    const message = `⚡ NEW BOOKING REQUEST via TekSBook!\n\n🏢 Service Provider: ${business.name}\n👤 Client: ${clientName}\n📱 Contact: ${clientPhone}\n📅 Date: ${bookingDate}\n⏰ Time: ${bookingTime}\n🛠️ Selected Services:\n${selectedServices.join(", ")}\n💰 Total Price: R${calculatedTotal}\n\nNotes: ${notes || "None"}`;
+    const message = `⚡ NEW BOOKING REQUEST via TekSBook!\n\n🏢 Service Provider: ${business.name}\n👤 Client: ${clientName}\n📱 Contact: ${clientPhone}\n📅 Date: ${formattedDate}\n⏰ Time: ${bookingTime}\n🛠️ Selected Services:\n${selectedServices.join(", ")}\n💰 Total Price: R${calculatedTotal}\n\nNotes: ${notes || "None"}`;
 
-    // Trigger WhatsApp Click-to-Chat directly
-    const whatsappUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, "_blank");
+    // 3. Trigger backend WhatsApp API call (No wa.me redirect)
+    try {
+      await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: clientPhone,
+          clientName: clientName,
+          message: message,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to send automated WhatsApp notification:", err);
+    }
 
-    alert(`✅ Booking Confirmed! Your request for R${calculatedTotal} has been saved and sent via WhatsApp.`);
+    alert(`✅ Booking Confirmed! Your request for R${calculatedTotal} has been saved and confirmed.`);
     router.push("/");
   };
 
