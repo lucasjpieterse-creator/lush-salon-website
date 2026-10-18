@@ -75,7 +75,7 @@ export default function ManagerPortal() {
     setSearchQuery("");
   };
 
-  // DIRECT WHATSAPP ACTION HANDLER FOR MANAGER PORTAL
+  // AUTOMATED WHATSAPP ACTION HANDLER FOR MANAGER PORTAL
   const handleBookingAction = async (booking: any, action: "confirm" | "reschedule" | "decline" | "delete") => {
     if (action === "delete") {
       if (!confirm(`Are you sure you want to delete the booking for ${booking.client_name}?`)) return;
@@ -106,7 +106,7 @@ export default function ManagerPortal() {
     // 2. Update local state so status badge changes immediately
     setBookings(bookings.map((b) => (b.id === booking.id ? { ...b, status: newStatus } : b)));
 
-    // 3. Prepare message text and trigger direct WhatsApp Click-to-Chat
+    // 3. Prepare message text
     const clientPhone = (booking.client_phone || "").replace(/[^0-9]/g, "");
     let textMessage = "";
 
@@ -118,9 +118,21 @@ export default function ManagerPortal() {
       textMessage = `Hi ${booking.client_name}! Unfortunately, ${business.name} is unable to accept your booking request for ${booking.booking_date} at ${booking.booking_time}. Apologies for any inconvenience!`;
     }
 
+    // 4. Trigger automated Meta Cloud API call from backend (No wa.me redirect)
     if (clientPhone && textMessage) {
-      const whatsappUrl = `https://wa.me/${clientPhone}?text=${encodeURIComponent(textMessage)}`;
-      window.open(whatsappUrl, "_blank");
+      try {
+        await fetch('/api/whatsapp/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: clientPhone,
+            clientName: booking.client_name,
+            message: textMessage
+          })
+        });
+      } catch (err) {
+        console.error("Failed to send automated WhatsApp from server:", err);
+      }
     }
 
     setActionLoadingId(null);
