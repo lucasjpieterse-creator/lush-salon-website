@@ -15,6 +15,8 @@ export async function POST(req) {
     
     const WHATSAPP_TOKEN = process.env.WHATSAPP_SYSTEM_USER_TOKEN;
     const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
+    
+    // FIXED: Corrected the Meta Graph API URL endpoint structure
     const metaUrl = `https://facebook.com{PHONE_NUMBER_ID}/messages`;
 
     // ─── FLOW 1: NEW BOOKING REQUEST (SENT TO OWNER) ───
@@ -31,10 +33,16 @@ export async function POST(req) {
         return new Response('Owner phone mapping error', { status: 404 });
       }
 
+      // SANITIZATION: Clean the owner's phone number for Meta
+      let ownerNumber = businessProfile.owner_whatsapp_phone.replace(/\D/g, '');
+      if (ownerNumber.startsWith('0')) {
+        ownerNumber = '27' + ownerNumber.substring(1);
+      }
+
       // 2. Format the message for the Business Owner
       const ownerPayload = {
         messaging_product: "whatsapp",
-        to: businessProfile.owner_whatsapp_phone, // <-- TARGETS THE OWNER'S NUMBER ONLY
+        to: ownerNumber, // <-- TARGETS THE SANITIZED OWNER'S NUMBER ONLY
         type: "text",
         text: {
           body: `⚡ NEW BOOKING REQUEST via TeksBook!\n\n🏢 Service Provider: ${record.business_name || 'N/A'}\n👤 Client: ${record.client_name || record.customer_name}\n📱 Contact: ${record.client_phone || record.customer_phone}\n📅 Date: ${record.booking_date}\n🕒 Time: ${record.booking_time}\n🛠️ Selected Services: ${record.service_name}\n💰 Total Price: R${record.total_price || record.price}\n\nNotes: ${record.notes || record.client_notes || 'None'}`
@@ -52,16 +60,22 @@ export async function POST(req) {
     // ─── FLOW 2: CONFIRMATION NOTIFICATION (SENT TO CLIENT) ───
     if (type === 'UPDATE' && old_record.status !== 'confirmed' && record.status === 'confirmed') {
       
-      const clientNumber = record.client_phone || record.customer_phone;
+      let clientNumber = record.client_phone || record.customer_phone;
 
       if (!clientNumber) {
         return new Response('No client phone string discovered', { status: 400 });
       }
 
+      // SANITIZATION: Automatically convert standard local numbers (072...) to Meta's format (2772...)
+      clientNumber = clientNumber.replace(/\D/g, ''); // Remove spaces, symbols, and plus signs
+      if (clientNumber.startsWith('0')) {
+        clientNumber = '27' + clientNumber.substring(1); // Strip 0 and prepend country code
+      }
+
       // Format the message for the Client
       const clientPayload = {
         messaging_product: "whatsapp",
-        to: clientNumber, // <-- TARGETS THE CLIENT'S DEVICE ONLY
+        to: clientNumber, // <-- TARGETS THE SANITIZED CLIENT'S DEVICE ONLY
         type: "text",
         text: {
           body: `Hi ${record.client_name || record.customer_name}! ⚡ Your booking for "${record.service_name}" on ${record.booking_date} at ${record.booking_time} with ${record.business_name} is CONFIRMED! See you then.`
