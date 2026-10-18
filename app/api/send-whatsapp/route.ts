@@ -1,45 +1,23 @@
+import { sendWhatsApp } from '@/lib/whatsapp';
+
 export async function POST(req: Request) {
   try {
-    const { to, clientName } = await req.json();
-    if (!to) return Response.json({ error: "no number" }, { status: 400 });
+    const { to, clientName, message } = await req.json();
 
-    const cleanTo = to.toString().replace(/\D/g, '').replace(/^0/, '27');
+    if (!to) {
+      return Response.json({ error: "Missing phone number ('to')" }, { status: 400 });
+    }
 
-    const payload = {
-      messaging_product: "whatsapp",
-      to: cleanTo,
-      type: "template",
-      template: {
-        name: "booking_confirmed",
-        language: { code: "en" },
-        components: [
-          {
-            type: "body",
-            parameters: [
-              { type: "text", text: clientName || "Valued Client" }
-            ]
-          }
-        ]
-      }
-    };
+    // Determine message text (supports custom message or default fallback)
+    const textToSend = message || `Hi ${clientName || 'Valued Client'} 👋, your booking on TekSBook has been confirmed!`;
 
-    const res = await fetch(
-      `https://graph.facebook.com/v20.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      }
-    );
+    // Send via our unified WhatsApp helper
+    const result = await sendWhatsApp(to, textToSend);
 
-    const result = await res.json();
-    console.log("WhatsApp result:", result);
+    console.log("WhatsApp route result:", result);
     return Response.json(result);
   } catch (e) {
-    console.error(e);
+    console.error("WhatsApp route error:", e);
     return Response.json({ error: String(e) }, { status: 500 });
   }
 }
