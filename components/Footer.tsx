@@ -1,39 +1,35 @@
-// components/Footer.tsx
 import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="w-full border-t border-zinc-800 bg-black py-8 px-4 text-zinc-400 text-xs mt-12">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <footer className="w-full bg-[#0a0a0a] border-t border-zinc-800/80 py-8 px-6 font-mono text-zinc-400 text-xs mt-auto">
+      <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
-          <p className="font-bold text-white text-sm">TekSBook</p>
-          <p className="text-zinc-500 mt-0.5">
-            Local B2B Directory • Secunda, Evander, Trichardt & Kinross
+          <p className="text-white font-bold text-sm">TekSBook Secunda</p>
+          <p className="text-[11px] text-zinc-500 mt-0.5">
+            On-Demand Local Service Directory — Secunda, Evander & Trichardt
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-6 text-zinc-400">
-          <a
-            href="https://wa.me/27650753499?text=Hi%20TekSBook,%20I'd%20like%20to%20inquire%20about%20a%20listing."
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 transition-colors"
-          >
-            💬 WhatsApp: 065 075 3499
-          </a>
-          <span className="text-emerald-500 font-semibold flex items-center gap-1">
-            🔒 POPIA Compliant
-          </span>
-          <Link href="/terms" className="hover:text-white transition-colors">
-            Terms & Conditions
+        <div className="flex flex-wrap items-center gap-6 text-xs">
+          <Link href="/about" className="hover:text-cyan-400 transition">
+            About Us
           </Link>
-          <Link href="/privacy" className="hover:text-white transition-colors">
+          <Link href="/contact" className="hover:text-cyan-400 transition">
+            Contact
+          </Link>
+          <Link href="/privacy" className="hover:text-cyan-400 transition">
             Privacy Policy
           </Link>
+          <Link href="/terms" className="hover:text-cyan-400 transition">
+            Terms of Service
+          </Link>
         </div>
-      </div>
-      <div className="max-w-6xl mx-auto mt-6 pt-4 border-t border-zinc-900 text-center text-[10px] text-zinc-600">
-        © {new Date().getFullYear()} TekSBook. All rights reserved.
+
+        <div className="text-right text-[11px] text-zinc-500">
+          <p>© {new Date().getFullYear()} TekSBook. All rights reserved.</p>
+          <p className="mt-0.5 text-zinc-400">support@teksbooksecunda.co.za</p>
+        </div>
       </div>
     </footer>
   );
