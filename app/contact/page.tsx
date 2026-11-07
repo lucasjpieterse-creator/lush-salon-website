@@ -17,7 +17,7 @@ export default function ContactPage() {
           </p>
 
           <div className="text-xs font-mono space-y-2 text-zinc-400">
-            <p><strong className="text-white">Email:</strong> support@teksbooksecunda.co.za</p>
+            <p><strong className="text-white">Email:</strong> teksbook.info@gmail.com</p>
             <p><strong className="text-white">Region:</strong> Secunda, Mpumalanga, South Africa</p>
             <p><strong className="text-white">WhatsApp Support:</strong> +27 65 075 3499</p>
           </div>

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-[#0a0a0a] border-t border-zinc-800/80 py-8 px-6 font-mono text-zinc-400 text-xs mt-auto">
+    <footer className="w-full bg-[#0a0a0a] border-t border-zinc-800/80 py-8 px-6 font-mono text-zinc-400 text-xs mt-auto relative z-20">
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
           <p className="text-white font-bold text-sm">TekSBook Secunda</p>
@@ -28,7 +28,7 @@ export default function Footer() {
 
         <div className="text-right text-[11px] text-zinc-500">
           <p>© {new Date().getFullYear()} TekSBook. All rights reserved.</p>
-          <p className="mt-0.5 text-zinc-400">support@teksbooksecunda.co.za</p>
+          <p className="mt-0.5 text-zinc-400">teksbook.info@gmail.com</p>
         </div>
       </div>
     </footer>

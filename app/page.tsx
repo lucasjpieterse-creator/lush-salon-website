@@ -27,7 +27,6 @@ export default function LandingPage() {
 
     fetchApprovedBusinesses();
 
-    // SUPABASE REALTIME SUBSCRIPTION FOR INSTANT PROMOTION / APPROVAL UPDATES
     const channel = supabase
       .channel("public:businesses")
       .on(
@@ -60,30 +59,25 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white p-6 max-w-7xl mx-auto selection:bg-cyan-500 selection:text-black pb-32 relative overflow-hidden">
-      {/* FULLY AUTOMATED SEASONAL OVERLAY - ALWAYS ON TOP (z-50) */}
+    <main className="min-h-screen bg-black text-white p-6 max-w-7xl mx-auto selection:bg-cyan-500 selection:text-black pb-12 relative overflow-hidden">
+      {/* FULLY AUTOMATED SEASONAL OVERLAY */}
       <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-        {/* TOP RIGHT GLOWING ELEMENT */}
         <div className="absolute top-4 right-4 text-4xl sm:text-5xl animate-season-glow">
           {theme.cornerEmojiTopRight}
         </div>
 
-        {/* BOTTOM LEFT GLOWING ELEMENT */}
         <div className="absolute bottom-4 left-4 text-4xl sm:text-5xl animate-season-glow">
           {theme.cornerEmojiBottomLeft}
         </div>
 
-        {/* FLYING ELEMENT 1 */}
         <div className="absolute top-[15%] animate-fly-1">
           <span className="inline-block text-2xl sm:text-3xl animate-bob-wing">{theme.flyingEmoji}</span>
         </div>
 
-        {/* FLYING ELEMENT 2 */}
         <div className="absolute top-[48%] animate-fly-2">
           <span className="inline-block text-3xl sm:text-4xl animate-bob-wing">{theme.flyingEmoji}</span>
         </div>
 
-        {/* FLYING ELEMENT 3 */}
         <div className="absolute top-[78%] animate-fly-3">
           <span className="inline-block text-2xl sm:text-3xl animate-bob-wing">{theme.flyingEmoji}</span>
         </div>
@@ -266,23 +260,6 @@ export default function LandingPage() {
             </div>
           );
         })}
-      </div>
-
-      {/* FLOATING "REQUEST A SERVICE" BANNER */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-xl bg-black/90 border border-cyan-500/40 rounded-full px-6 py-3 flex items-center justify-between shadow-[0_0_25px_rgba(6,182,212,0.3)] backdrop-blur-md z-40">
-        <span className="text-xs font-mono text-zinc-300 truncate flex items-center gap-1.5">
-          <span>{theme.primaryEmoji}</span>
-          <span>Can't find a service in TEKS?</span>
-        </span>
-
-        <a
-          href="https://wa.me/27650753499?text=Hi%20TekSBook!%20I%20am%20looking%20for%20a%20specific%20service%20in%20TEKS:"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs font-mono font-bold bg-cyan-400 text-black px-4 py-2 rounded-full hover:bg-cyan-300 transition shrink-0 ml-2"
-        >
-          Request Quote 💬
-        </a>
       </div>
     </main>
   );
