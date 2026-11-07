@@ -156,7 +156,7 @@ export default function LandingPage() {
             </h1>
           </div>
           <p className="text-xs text-zinc-400 mt-1 font-mono">
-            {theme.subtitle} • Secunda, Evander, Trichardt & Kinross
+            {theme.subtitle} Secunda, Evander, Trichardt & Kinross
           </p>
         </div>
 
@@ -268,28 +268,13 @@ export default function LandingPage() {
         })}
       </div>
 
-      {/* FOOTER - LEGAL LINKS & COPYRIGHT */}
-      <footer className="mt-16 pt-8 border-t border-zinc-800 text-center font-mono text-xs text-zinc-500 relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          © {new Date().getFullYear()} TekSBook. All rights reserved.
-        </div>
-        <div className="flex items-center gap-4 text-zinc-400">
-          <Link href="/privacy" className="hover:text-cyan-400 transition">
-            Privacy Policy (POPIA)
-          </Link>
-          <span>•</span>
-          <Link href="/terms" className="hover:text-cyan-400 transition">
-            Terms of Service
-          </Link>
-        </div>
-      </footer>
-
       {/* FLOATING "REQUEST A SERVICE" BANNER */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-xl bg-black/90 border border-cyan-500/40 rounded-full px-6 py-3 flex items-center justify-between shadow-[0_0_25px_rgba(6,182,212,0.3)] backdrop-blur-md z-40">
         <span className="text-xs font-mono text-zinc-300 truncate flex items-center gap-1.5">
           <span>{theme.primaryEmoji}</span>
           <span>Can't find a service in TEKS?</span>
         </span>
+
         <a
           href="https://wa.me/27650753499?text=Hi%20TekSBook!%20I%20am%20looking%20for%20a%20specific%20service%20in%20TEKS:"
           target="_blank"

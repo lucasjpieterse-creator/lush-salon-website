@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "teksbook Secunda | On-Demand Local Service Directory",
-  description: "Discover and book trusted local service providers in Secunda.",
+  title: "TekSBook Secunda | On-Demand Local Service Directory",
+  description: "Discover and book trusted local service providers in Secunda, Evander, and Trichardt.",
 };
 
 export default function RootLayout({
@@ -16,9 +17,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="bg-black">
-      <body className={`${inter.className} bg-black text-white min-h-screen antialiased`}>
-        {/* Render only page content to avoid duplicate navigation header */}
-        {children}
+      <body className={`${inter.className} bg-black text-white min-h-screen antialiased flex flex-col`}>
+        <div className="flex-1">{children}</div>
+        <Footer />
       </body>
     </html>
   );
