@@ -12,7 +12,7 @@ export default function AboutPage() {
         <h1 className="text-3xl font-black text-white font-mono">About TekSBook</h1>
         
         <p className="text-sm text-zinc-300 leading-relaxed">
-          TekSBook is Secunda’s premier digital directory connecting local residents directly with trusted, high-quality service providers across Secunda, Evander, and Trichardt.
+          TekSBook is Secunda’s premier digital directory connecting local residents directly with trusted, high-quality service providers across Secunda, Evander, Trichardt, and Kinross.
         </p>
 
         <div className="bg-[#121212] border border-zinc-800 rounded-2xl p-6 space-y-4">
